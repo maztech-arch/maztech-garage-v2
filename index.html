@@ -3,215 +3,346 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MazTech Garage Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Maztech Garage Working App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --navy:#0f2747;--navy2:#123760;--blue:#1f7ae0;--teal:#08a77f;--green:#10b981;
-      --red:#ef4444;--yellow:#f59e0b;--bg:#f3f7fb;--card:#fff;--text:#10243f;
-      --muted:#7888a2;--line:#e6edf5;--shadow:0 12px 30px rgba(15,39,71,.08);
-      --radius:16px;
+      --navy:#0f2444;--blue:#1e6fc4;--sky:#62b8ff;--bg:#f0f4f8;--card:#fff;--line:#e8edf2;
+      --text:#1e293b;--muted:#64748b;--soft:#f8fafc;--green:#059669;--orange:#f59e0b;--red:#dc2626;--purple:#7c3aed;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:"Kanit",system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
-    .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
-    .sidebar{background:linear-gradient(180deg,#102b4f,#0d2340);color:#fff;height:100vh;display:flex;flex-direction:column}
-    .brand{padding:24px;display:flex;align-items:center;gap:13px;border-bottom:1px solid rgba(255,255,255,.08)}
-    .logo{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#2a88ff,#18d4ae);display:grid;place-items:center;font-weight:800}
-    .brand h1{margin:0;font-size:18px}.brand p{margin:3px 0 0;font-size:12px;color:rgba(255,255,255,.62)}
-    .nav-wrap{padding:18px 0;overflow:auto}.nav-title{padding:12px 24px 8px;font-size:12px;color:rgba(255,255,255,.45)}
-    .nav-item{height:46px;display:flex;align-items:center;gap:12px;padding:0 22px;cursor:pointer;color:rgba(255,255,255,.75);border-left:4px solid transparent;transition:.2s;user-select:none}
-    .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}.nav-item.active{background:rgba(42,136,255,.22);color:#67c8ff;border-left-color:#2a88ff}
-    .nav-icon{width:22px;text-align:center}.badge{margin-left:auto;min-width:24px;height:22px;padding:0 7px;border-radius:99px;background:#ef4444;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
-    .partner{margin-top:auto;padding:16px 22px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:12px;align-items:center}
-    .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2a88ff,#18d4ae);display:grid;place-items:center;font-weight:700}
-    .partner strong{font-size:13px}.partner span{display:block;color:rgba(255,255,255,.55);font-size:11px}
-    .main{height:100vh;overflow:auto;background:linear-gradient(180deg,#f8fbff,#eef5fb)}
-    .topbar{position:sticky;top:0;z-index:20;height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 28px}
-    .crumb{color:#91a1b7;font-size:13px;min-width:190px}.crumb strong{color:var(--text)}
-    .search{width:min(520px,42vw);height:42px;border:1px solid #dfe7f1;border-radius:11px;background:#f8fbff;display:flex;align-items:center;gap:10px;padding:0 15px}
-    .search input{border:none;outline:none;background:transparent;width:100%;font-family:inherit;color:var(--text)}
-    .top-actions{margin-left:auto;display:flex;align-items:center;gap:11px}.date-pill,.icon-btn{height:40px;border:1px solid #dfe7f1;border-radius:11px;background:#f7fbff;color:#1f63b5;display:grid;place-items:center;padding:0 14px;font-size:13px;font-weight:500}.icon-btn{width:43px;padding:0;cursor:pointer}
-    .content{padding:28px}.page{display:none}.page.active{display:block}
-    .hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}.hero h2{margin:0 0 5px;font-size:25px}.hero p{margin:0;color:var(--muted);font-size:14px}
-    .primary-btn{border:none;height:44px;border-radius:10px;padding:0 20px;background:linear-gradient(135deg,#1f7ae0,#05a989);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;box-shadow:0 13px 26px rgba(31,122,224,.2)}
-    .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:17px;margin-bottom:20px}
-    .kpi-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;min-height:154px;position:relative;box-shadow:var(--shadow);overflow:hidden}
-    .kpi-card:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--accent,var(--blue))}
-    .kpi-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--icon-bg,#e8f2ff);color:var(--accent,var(--blue));font-size:19px;margin-bottom:13px}
-    .kpi-label{color:#7c8ca4;font-size:14px;margin-bottom:2px}.kpi-value{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.1}.kpi-sub{margin-top:8px;font-size:13px;color:var(--muted)}.kpi-sub.good{color:var(--green)}.kpi-sub.bad{color:var(--red)}.kpi-sub.warn{color:var(--yellow)}
-    .panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px}.panel,.page-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}.panel{min-height:340px}.panel h3{margin:0 0 2px;font-size:17px}.panel p{margin:0 0 18px;color:var(--muted);font-size:13px}
-    .metric-list{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;margin-top:18px}.mini-metric{border:1px solid var(--line);border-radius:13px;padding:15px;background:#f9fbfe}.mini-metric span{display:block;color:var(--muted);font-size:13px}.mini-metric strong{display:block;margin-top:5px;font-size:22px}
-    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px;margin-top:20px}table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}th,td{padding:13px 15px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f6f9fd;color:#61718a;font-weight:600}.status-pill{display:inline-flex;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;background:#edf7ff;color:#1f7ae0}
-    .toast{position:fixed;right:24px;bottom:24px;background:#10243f;color:#fff;border-radius:13px;padding:13px 16px;box-shadow:0 18px 35px rgba(0,0,0,.18);opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s;z-index:100;font-size:13px}.toast.show{opacity:1;transform:translateY(0)}
-    .api-status{font-size:12px;color:var(--muted);margin-top:9px}.loading-cover{position:fixed;inset:0;background:rgba(243,247,251,.8);backdrop-filter:blur(4px);display:none;place-items:center;z-index:90}.loading-cover.show{display:grid}.loader-box{width:250px;padding:22px;background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);text-align:center}.spinner{width:36px;height:36px;margin:0 auto 12px;border:4px solid #e7eef7;border-top-color:var(--teal);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-    @media(max-width:1180px){.app{grid-template-columns:86px 1fr}.brand{padding:21px 18px;justify-content:center}.brand div:nth-child(2),.nav-title,.nav-text,.partner div:nth-child(2),.badge{display:none}.nav-item{justify-content:center;padding:0;border-left-width:0}.kpi-grid{grid-template-columns:repeat(2,minmax(210px,1fr))}.panel-grid{grid-template-columns:1fr}}
-    @media(max-width:760px){body{overflow:auto}.app{display:block}.sidebar{height:auto}.nav-wrap{display:flex;overflow-x:auto;padding:8px}.nav-title,.partner{display:none}.nav-item{min-width:60px;height:44px;border-radius:11px;border:none}.main{height:auto;min-height:100vh}.topbar{height:auto;flex-wrap:wrap;padding:14px}.crumb{min-width:auto}.search{width:100%;order:4}.content{padding:17px}.hero{flex-direction:column}.kpi-grid,.metric-list{grid-template-columns:1fr}}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Sarabun','Noto Sans Thai',sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+    button,input,select,textarea{font-family:inherit} button{cursor:pointer}
+    .app{display:flex;min-height:100vh;background:var(--bg)}
+    .sidebar{width:230px;min-width:230px;background:var(--navy);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+    .logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .logo-icon{width:34px;height:34px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:7px}
+    .logo-title{font-size:15px;font-weight:700;line-height:1.2}.logo-sub{font-size:10px;color:rgba(255,255,255,.48);margin-top:2px}
+    .nav{flex:1;padding:10px 0;overflow:auto}.nav-section{font-size:9px;color:rgba(255,255,255,.35);padding:11px 16px 5px;letter-spacing:.8px;text-transform:uppercase}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;border-left:3px solid transparent;color:rgba(255,255,255,.65);font-size:12px;transition:.15s}
+    .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}.nav-item.active{background:rgba(30,111,196,.25);color:var(--sky);border-left-color:var(--blue)}
+    .nav-badge{margin-left:auto;background:#e24b4a;color:#fff;font-size:9px;padding:1px 6px;border-radius:999px;font-weight:700}.user{padding:13px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+    .av{width:31px;height:31px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}.u-name{font-size:12px;font-weight:600}.u-role{font-size:9px;color:rgba(255,255,255,.45)}
+    .main{flex:1;min-width:0;display:flex;flex-direction:column}.topbar{height:54px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:5}
+    .crumb{font-size:11px;color:#94a3b8;display:flex;gap:6px;align-items:center}.crumb b{color:var(--text);font-weight:600}.top-search{position:relative;flex:1;max-width:390px;margin-left:8px}.top-search span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8}.top-search input{width:100%;padding:7px 12px 7px 31px;border:1px solid #e2e8f0;background:var(--soft);border-radius:9px;font-size:12px;outline:none}.top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}.date-badge{background:#eff6ff;color:#1d4ed8;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600}.icon-btn{width:32px;height:32px;border:1px solid #e2e8f0;background:var(--soft);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative}.dot{position:absolute;top:5px;right:5px;width:6px;height:6px;background:#e24b4a;border-radius:50%;border:1px solid #fff}
+    .content{padding:20px;display:flex;flex-direction:column;gap:16px;overflow:auto}.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.page-title{font-size:18px;font-weight:700;color:var(--navy)}.page-sub{font-size:12px;color:var(--muted);margin-top:3px}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{border:0;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}.btn.primary{background:var(--blue);color:#fff}.btn.out{background:#fff;color:#374151;border:1px solid #d1d5db}.btn.soft{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0}.btn.warn{background:#fff7ed;color:#c2410c;border:1px solid #fdba74}.btn.danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}.btn.green{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}.btn.sm{padding:4px 8px;font-size:10px;border-radius:6px}
+    .grid{display:grid;gap:12px}.kpi-grid{grid-template-columns:repeat(4,minmax(170px,1fr))}.kpi{background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px 16px;position:relative;overflow:hidden}.kpi:before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--blue))}.kpi-icon{width:34px;height:34px;border-radius:9px;background:var(--ib,#dbeafe);display:flex;align-items:center;justify-content:center;margin-bottom:10px}.kpi-label{font-size:11px;color:var(--muted)}.kpi-value{font-size:22px;font-weight:700;color:var(--navy);line-height:1.1;margin-top:3px}.kpi-note{font-size:10px;color:var(--muted);margin-top:6px}.up{color:var(--green)}.down{color:var(--red)}
+    .card{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}.card-head{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #f1f5f9;gap:8px}.card-title{font-size:13px;font-weight:700;color:var(--navy)}.card-body{padding:15px 16px}.two-col{display:grid;grid-template-columns:1fr 330px;gap:16px}.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px}.filter-panel{background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px 16px}.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:10px;color:var(--muted);font-weight:600}.field input,.field select,.field textarea{border:1px solid #e2e8f0;background:var(--soft);border-radius:8px;padding:8px 10px;font-size:12px;color:#374151;outline:none}.field textarea{min-height:76px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);background:#fff}.form-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px}.span-2{grid-column:span 2}.span-4{grid-column:1/-1}
+    table{width:100%;border-collapse:collapse}.table-wrap{overflow:auto}.data-table thead th{background:var(--soft);padding:9px 10px;text-align:left;font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);white-space:nowrap}.data-table tbody td{padding:10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#374151;white-space:nowrap;vertical-align:top}.data-table tbody tr:hover{background:var(--soft)}.right{text-align:right}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}.job-link{color:var(--blue);font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-decoration:none}.plate{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f5f9;color:var(--navy);font-weight:700;padding:2px 7px;border-radius:5px}.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}.b-blue{background:#dbeafe;color:#1d4ed8}.b-green{background:#d1fae5;color:#065f46}.b-orange{background:#ffedd5;color:#c2410c}.b-purple{background:#ede9fe;color:#5b21b6}.b-red{background:#fee2e2;color:#991b1b}.b-gray{background:#f1f5f9;color:#475569}.b-yellow{background:#fef9c3;color:#854d0e}.b-teal{background:#ccfbf1;color:#0f766e}
+    .mini-bars{display:flex;flex-direction:column;gap:9px}.bar-row{display:flex;gap:9px;align-items:center}.bar-label{width:115px;font-size:11px;color:#374151}.track{height:8px;background:#f1f5f9;border-radius:99px;flex:1;overflow:hidden}.fill{height:100%;border-radius:99px;background:var(--blue)}.bar-val{width:55px;text-align:right;font-size:11px;color:var(--muted)}.alert{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}.alert:last-child{border-bottom:0}.alert-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}.alert-text{font-size:11px;color:#374151;line-height:1.5}.rail-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;padding:7px 0;font-size:12px}.rail-row:last-child{border-bottom:0}.rail-key{color:var(--muted)}.rail-val{font-weight:700}.detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}.info-label{font-size:10px;color:#94a3b8}.info-val{font-size:12px;font-weight:600}.note-box{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:10px}.note-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.note-text{font-size:12px;line-height:1.6;color:#374151}.timeline{display:flex;flex-direction:column}.tl{display:flex;gap:10px}.tl-dot{width:13px;height:13px;border-radius:50%;border:2px solid #d1d5db;margin-top:2px}.tl.done .tl-dot{background:var(--green);border-color:var(--green)}.tl.active .tl-dot{background:#fff;border-color:var(--blue);box-shadow:0 0 0 3px rgba(30,111,196,.15)}.tl-text{flex:1;padding-bottom:13px;font-size:12px}.tl-title{font-weight:700}.tl-time{font-size:10px;color:#94a3b8;margin-top:1px}.modal{position:fixed;inset:0;background:rgba(15,36,68,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal.show{display:flex}.modal-box{background:#fff;border-radius:12px;width:min(760px,100%);max-height:90vh;overflow:auto;border:1px solid var(--line)}.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f1f5f9}.toast{position:fixed;right:20px;bottom:20px;background:var(--navy);color:#fff;padding:11px 16px;border-radius:10px;box-shadow:0 10px 35px rgba(15,36,68,.25);opacity:0;transform:translateY(12px);transition:.25s;z-index:99}.toast.show{opacity:1;transform:translateY(0)}.empty{padding:30px;text-align:center;color:#94a3b8}.print-only{display:none}
+    @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts,.two-col,.detail-layout{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}.span-4,.span-2{grid-column:1/-1}.sidebar{width:205px;min-width:205px}}
+    @media(max-width:760px){.app{display:block}.sidebar{position:relative;width:100%;height:auto}.nav{display:grid;grid-template-columns:repeat(2,1fr)}.nav-section,.user{display:none}.topbar{position:relative;flex-wrap:wrap;height:auto;padding:10px}.top-search{order:3;max-width:none;flex-basis:100%}.content{padding:12px}.kpi-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.page-head{display:block}.actions{justify-content:flex-start;margin-top:10px}}
+    @media print{.sidebar,.topbar,.actions,.btn,.filter-panel,.nav,.toast{display:none!important}.content{padding:0}.card{border:0}.print-only{display:block}.no-print{display:none!important}body{background:#fff}}
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand"><div class="logo">MZ</div><div><h1>Maztech Garage</h1><p>ระบบจัดการอู่ซ่อมรถ Mazda</p></div></div>
-      <div class="nav-wrap">
-        <div class="nav-title">หลัก</div>
-        <div class="nav-item active" data-page="dashboard"><span class="nav-icon">▦</span><span class="nav-text">Dashboard</span></div>
-        <div class="nav-item" data-page="jobs"><span class="nav-icon">▭</span><span class="nav-text">งานซ่อมทั้งหมด</span><span class="badge" id="jobBadge">0</span></div>
-        <div class="nav-item" data-page="intake"><span class="nav-icon">◔</span><span class="nav-text">รับรถเข้า / เปิดจ๊อบ</span></div>
-        <div class="nav-title">คลัง & บัญชี</div>
-        <div class="nav-item" data-page="parts"><span class="nav-icon">▥</span><span class="nav-text">อะไหล่ / คลัง</span></div>
-        <div class="nav-item" data-page="customers"><span class="nav-icon">♟</span><span class="nav-text">ลูกค้า / รถ</span></div>
-        <div class="nav-item" data-page="cashflow"><span class="nav-icon">☰</span><span class="nav-text">รายรับ-รายจ่าย</span></div>
-        <div class="nav-item" data-page="reports"><span class="nav-icon">▣</span><span class="nav-text">รายงาน / Export</span></div>
-        <div class="nav-title">ระบบ</div>
-        <div class="nav-item" data-page="audit"><span class="nav-icon">☷</span><span class="nav-text">Audit Log</span></div>
-        <div class="nav-item" data-page="settings"><span class="nav-icon">★</span><span class="nav-text">ตั้งค่าระบบ</span></div>
-      </div>
-      <div class="partner"><div class="avatar">เอ</div><div><strong>เจ้าของ / Partner</strong><span>Owner · MazTech Garage</span></div></div>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div class="crumb">Maztech Garage › <strong id="crumbTitle">Dashboard</strong></div>
-        <label class="search"><span>🔍</span><input id="globalSearch" type="search" placeholder="ค้นหาทะเบียน, ชื่อลูกค้า, Job No..." /></label>
-        <div class="top-actions"><div class="date-pill" id="todayText">วันนี้</div><button class="icon-btn" id="refreshBtn" title="รีเฟรชข้อมูล">🔄</button><button class="icon-btn">เอ</button></div>
-      </header>
-      <section class="content">
-        <div class="page active" id="page-dashboard">
-          <div class="hero"><div><h2>สวัสดี, Maztech Garage 👋</h2><p id="dashboardSubtitle">ภาพรวมงานซ่อม รายรับรายจ่าย และสถานะงานวันนี้</p><div class="api-status" id="apiStatus">กำลังเตรียมข้อมูล Dashboard_Data...</div></div><button class="primary-btn" data-page="intake">+ เปิดจ๊อบใหม่</button></div>
-          <div class="kpi-grid" id="kpiGrid"></div>
-          <div class="panel-grid">
-            <div class="panel"><h3>รายรับ vs รายจ่าย</h3><p>รายเดือนย้อนหลัง 6 เดือน (หน่วย: บาท)</p><canvas id="incomeChart" height="210"></canvas></div>
-            <div class="panel"><h3>จำนวนรถเข้าบริการ</h3><p>แนวโน้มงานซ่อมย้อนหลัง 6 เดือน (คัน)</p><canvas id="carsChart" height="210"></canvas></div>
-          </div>
-        </div>
-        <div class="page" id="page-jobs"></div><div class="page" id="page-intake"></div><div class="page" id="page-parts"></div><div class="page" id="page-customers"></div><div class="page" id="page-cashflow"></div><div class="page" id="page-reports"></div><div class="page" id="page-audit"></div><div class="page" id="page-settings"></div>
-      </section>
-    </main>
-  </div>
-  <div class="loading-cover" id="loadingCover"><div class="loader-box"><div class="spinner"></div><strong>กำลังดึงข้อมูล</strong><div style="font-size:13px;color:#7888a2;margin-top:6px;">จากชีท DASHBOARD_DATA</div></div></div>
-  <div class="toast" id="toast"></div>
-  <script>
-    /*
-      วิธีเชื่อม Google Sheets:
-      1) Deploy Apps Script เป็น Web App
-      2) เอา URL ที่ลงท้าย /exec มาใส่ API_URL ด้านล่าง
-    */
-    const CONFIG = {
-      API_URL: "", // ตัวอย่าง: "https://script.google.com/macros/s/AKfycbxxxxx/exec"
-      DASHBOARD_ACTION: "getDashboardData"
-    };
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon">MZ</div><div class="logo-title" id="brandName">Maztech Garage</div><div class="logo-sub">ระบบจัดการอู่ซ่อมรถ Mazda</div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="user"><div class="av">เอ</div><div><div class="u-name">เจ้าของ / Partner</div><div class="u-role">Owner · MazTech Garage</div></div></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb"><span>Maztech Garage</span><span>›</span><b id="crumbTitle">Dashboard</b></div>
+      <div class="top-search"><span>🔍</span><input id="globalSearch" placeholder="ค้นหาทะเบียน, ลูกค้า, Job No..." onkeydown="if(event.key==='Enter') globalFind()"></div>
+      <div class="top-actions"><div class="date-badge" id="todayText"></div><button class="icon-btn" title="Sync Google Sheet" onclick="syncNow()">🔄</button><button class="icon-btn" onclick="go('audit')">🔔<i class="dot"></i></button><button class="icon-btn" onclick="toggleTheme()">☀️</button><div class="icon-btn" style="font-size:11px;font-weight:700;color:var(--navy);background:#e8f0fb;border-color:#c7d8f0">เอ</div></div>
+    </div>
+    <section class="content" id="view"></section>
+  </main>
+</div>
+<div class="modal" id="modal"><div class="modal-box"><div class="modal-head"><b id="modalTitle">Modal</b><button class="btn out sm" onclick="closeModal()">ปิด</button></div><div class="card-body" id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const CONFIG={
+  API_URL:"", 
+  ACTIONS:{
+    appState:"getAppState",
+    dashboard:"getDashboardData",
+    jobs:"getJobs",
+    parts:"getParts",
+    customers:"getCustomers",
+    vehicles:"getVehicles",
+    cashflow:"getCashflow",
+    audit:"getAuditLog",
+    settings:"getSettings"
+  }
+};
+const KEY='maztech_working_app_v2';
+const money=n=>'฿'+Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+const num=v=>Number(String(v||0).replace(/,/g,''))||0;
+const today=()=>new Date().toISOString().slice(0,10);
+const thDate=s=>{ if(!s) return '-'; const d=new Date(s+'T00:00:00'); return d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'}); };
+const ym=s=>(s||today()).slice(0,7);
+const uid=p=>p+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
+const menus=[
+  ['main','หลัก'],['dashboard','📊 Dashboard'],['jobs','📋 งานซ่อมทั้งหมด'],['newjob','➕ รับรถเข้า / เปิดจ๊อบ'],
+  ['ops','คลัง & บัญชี'],['parts','📦 อะไหล่ / คลัง'],['customers','👥 ลูกค้า / รถ'],['cashflow','💳 รายรับ-รายจ่าย'],['reports','📑 รายงาน / Export'],
+  ['system','ระบบ'],['audit','🔍 Audit Log'],['settings','⚙️ ตั้งค่าระบบ']
+];
+const defaultState={
+  page:'dashboard', selectedJobId:'MT-2504-0041', dark:false,
+  settings:{company:'Maztech Garage',jobPrefix:'MT',taxRate:0,account1:'KBank-รับ',account2:'KBank-จ่าย',reservePct:30},
+  dashboard:{},
+  parts:[
+    {id:'P-001',partNo:'SH01-20303',name:'DPF Filter Assembly CX-5',type:'แท้',unit:'ชิ้น',cost:12400,sell:16800,stock:2,supplier:'PSS'},
+    {id:'P-002',partNo:'PE01-14302',name:'น้ำมันเครื่อง Mazda Original 5W-30',type:'แท้',unit:'ลิตร',cost:380,sell:480,stock:24,supplier:'พระนคร เซลส์'},
+    {id:'P-003',partNo:'RF7W-20300',name:'ล้าง EGR / บริการ',type:'บริการ',unit:'งาน',cost:0,sell:800,stock:999,supplier:'ภายใน'},
+    {id:'P-004',partNo:'MD-ATF-FZ',name:'น้ำมันเกียร์ MAZDA ATF-FZ 1 ลิตร',type:'แท้',unit:'ลิตร',cost:420,sell:560,stock:12,supplier:'อะไหล่ร้านวอ'},
+    {id:'P-005',partNo:'KE64-39070C',name:'ยางแท่นเกียร์ CX-5',type:'แท้',unit:'ชิ้น',cost:1850,sell:2450,stock:1,supplier:'Mazda OEM'}
+  ],
+  customers:[
+    {id:'C-001',name:'คุณพรรณี สุขสม',phone:'089-876-5432',line:'@pannee_s',type:'VIP'},
+    {id:'C-002',name:'คุณวิชัย ทองดี',phone:'081-234-5678',line:'-',type:'ทั่วไป'},
+    {id:'C-003',name:'คุณกมลวรรณ',phone:'086-111-2233',line:'@kamol',type:'ลูกค้าประจำ'}
+  ],
+  vehicles:[
+    {id:'V-001',customerId:'C-001',plate:'ชม-5678',brand:'Mazda',model:'CX-5 2.0S',year:'2021',vin:'JMZKF5B44N0123456',color:'Polymetal Grey',mileage:82450},
+    {id:'V-002',customerId:'C-002',plate:'กข-1234',brand:'Mazda',model:'Mazda2 1.3E',year:'2020',vin:'-',color:'แดง',mileage:120400},
+    {id:'V-003',customerId:'C-003',plate:'3กฆ-8899',brand:'Mazda',model:'CX-30 SP',year:'2022',vin:'-',color:'ขาว',mileage:45200}
+  ],
+  jobs:[
+    {id:'MT-2504-0041',dateIn:'2026-04-18',dueDate:'2026-04-25',dateOut:'',customerId:'C-001',vehicleId:'V-001',status:'รออะไหล่',payment:'ค้างชำระ',paidAmount:0,mechanic:'สุทธินนท์',symptom:'ไฟแจ้งเตือน DPF ขึ้น เครื่องยนต์อ่อนแรงลง ควันออกมากกว่าปกติ',diagnosis:'DPF อุดตันระดับ 85% แนะนำเปลี่ยนใหม่พร้อมล้าง EGR',internalNote:'อะไหล่ DPF สั่งจาก PSS อยู่ระหว่างรอส่ง',items:[{partId:'P-001',name:'DPF Filter Assembly CX-5',qty:1,cost:12400,sell:16800,type:'แท้'},{partId:'P-003',name:'ล้าง EGR / บริการ',qty:1,cost:0,sell:800,type:'บริการ'},{partId:'P-002',name:'น้ำมันเครื่อง Mazda Original 5W-30',qty:4,cost:380,sell:480,type:'แท้'}]},
+    {id:'MT-2504-0042',dateIn:'2026-04-19',dueDate:'2026-04-22',dateOut:'',customerId:'C-002',vehicleId:'V-002',status:'กำลังซ่อม',payment:'มัดจำแล้ว',paidAmount:5000,mechanic:'ภควัต',symptom:'เครื่องสั่น ควันดำ',diagnosis:'ตรวจพบเขม่าเยอะและหัวฉีดเริ่มสกปรก',internalNote:'รอแจ้งราคาสุดท้าย',items:[{partId:'P-002',name:'น้ำมันเครื่อง Mazda Original 5W-30',qty:4,cost:380,sell:480,type:'แท้'},{partId:'LAB',name:'ค่าแรงตรวจเช็กและล้างระบบ',qty:1,cost:0,sell:10880,type:'บริการ'}]},
+    {id:'MT-2504-0043',dateIn:'2026-04-20',dueDate:'2026-04-21',dateOut:'2026-04-21',customerId:'C-003',vehicleId:'V-003',status:'ส่งมอบแล้ว',payment:'ชำระครบ',paidAmount:7200,mechanic:'อภิสิทธิ์',symptom:'เข้าเช็กระยะ เปลี่ยนถ่ายน้ำมัน',diagnosis:'ปกติ',internalNote:'ลูกค้าพอใจ นัดครั้งหน้าอีก 10,000 กม.',items:[{partId:'P-002',name:'น้ำมันเครื่อง Mazda Original 5W-30',qty:5,cost:380,sell:480,type:'แท้'},{partId:'LAB',name:'ค่าแรงเช็กระยะ',qty:1,cost:0,sell:4800,type:'บริการ'}]}
+  ],
+  cashflow:[
+    {id:'CF-001',date:'2026-04-01',account:'KBank-รับ',direction:'IN',category:'ทุนเริ่มต้น',desc:'ยอดยกมา',amount:225000,ref:'OPEN'},
+    {id:'CF-002',date:'2026-04-02',account:'KBank-จ่าย',direction:'OUT',category:'ค่าเช่า',desc:'ค่าเช่าอู่',amount:35000,ref:'RENT'},
+    {id:'CF-003',date:'2026-04-21',account:'KBank-รับ',direction:'IN',category:'รายรับ-งานซ่อม',desc:'รับชำระ MT-2504-0043',amount:7200,ref:'MT-2504-0043'}
+  ],
+  logs:[{at:new Date().toLocaleString('th-TH'),text:'สร้างข้อมูลตัวอย่างเริ่มต้น'}]
+};
+let state=load();
 
-    const FALLBACK_DATA = {
-      cash_balance_total:-73800,cash_kbank_225:12700,cash_kbank_051:-86500,
-      revenue_this_month:0,expense_this_month:0,net_profit_this_month:0,gp_percent_this_month:0,
-      revenue_mom_pct:0,expense_mom_pct:0,jobs_in_progress:1,mechanics_on_duty:3,
-      jobs_waiting_parts:2,parts_waiting_critical:0,jobs_ready_delivery:1,
-      ar_overdue_amount:0,ar_overdue_count:195,ar_overdue_days_threshold:7,
-      reserve_rate:.3,fixed_cost_monthly:68000,revenue_all_time:12700,expense_all_time:86500,
-      net_profit_all_time:-73800,distributable_cumulative:0,jobs_this_month_count:0,
-      avg_job_value_this_month:0,jobs_completed_this_month:0,jobs_overdue_this_month:0,
-      last_updated:"01/05/2026 02:24",shop_name:"MazTech Garage",budget_revenue_monthly:600000,num_partners:4
-    };
-    let dashboardData={...FALLBACK_DATA}, incomeChart, carsChart;
-    const pageNames={dashboard:"Dashboard",jobs:"งานซ่อมทั้งหมด",intake:"รับรถเข้า / เปิดจ๊อบ",parts:"อะไหล่ / คลัง",customers:"ลูกค้า / รถ",cashflow:"รายรับ-รายจ่าย",reports:"รายงาน / Export",audit:"Audit Log",settings:"ตั้งค่าระบบ"};
-    const baht=v=>new Intl.NumberFormat("th-TH",{maximumFractionDigits:0}).format(Number(v||0));
-    const percent=v=>{let n=Number(v||0); if(Math.abs(n)<1)n*=100; return `${n.toFixed(1)}%`};
-    const todayThai=()=>new Date().toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"});
-
-    function normalizePayload(payload){
-      if(!payload)return null;
-      if(payload.data && !Array.isArray(payload.data))return payload.data.metrics||payload.data;
-      if(payload.metrics)return payload.metrics;
-      const rows=Array.isArray(payload.values)?payload.values:Array.isArray(payload.data)?payload.data:Array.isArray(payload)?payload:null;
-      if(!rows)return null;
-      const obj={};
-      rows.forEach(row=>{
-        if(!Array.isArray(row))return;
-        const key=String(row[0]||"").trim();
-        if(!key||key.includes("metric_key")||/[📊💰🔧👥📈🏥🚗⚙️🟡]/u.test(key))return;
-        obj[key]=row[1];
-      });
-      return obj;
+let syncBusy=false;
+function apiUrl(action,params={}){
+  if(!CONFIG.API_URL)return '';
+  const u=new URL(CONFIG.API_URL);
+  u.searchParams.set('action',action);
+  u.searchParams.set('t',Date.now());
+  Object.keys(params||{}).forEach(k=>u.searchParams.set(k,params[k]));
+  return u.toString();
+}
+async function apiGet(action,params={}){
+  const url=apiUrl(action,params);
+  if(!url)throw new Error('ยังไม่ได้ใส่ CONFIG.API_URL');
+  const res=await fetch(url,{method:'GET',cache:'no-store'});
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const json=await res.json();
+  if(json&&json.ok===false)throw new Error(json.error||'API error');
+  return json.data||json;
+}
+function applyApiState(payload){
+  if(!payload)return;
+  if(payload.dashboard)state.dashboard=payload.dashboard;
+  if(payload.settings)state.settings={...state.settings,...payload.settings};
+  if(Array.isArray(payload.parts))state.parts=payload.parts;
+  if(Array.isArray(payload.customers))state.customers=payload.customers;
+  if(Array.isArray(payload.vehicles))state.vehicles=payload.vehicles;
+  if(Array.isArray(payload.jobs))state.jobs=payload.jobs;
+  if(Array.isArray(payload.cashflow))state.cashflow=payload.cashflow;
+  if(Array.isArray(payload.logs))state.logs=payload.logs;
+  hydrateRelations();
+  if(!state.selectedJobId&&state.jobs[0])state.selectedJobId=state.jobs[0].id;
+  save();
+}
+function safeId(prefix,text){return prefix+'-'+String(text||Math.random()).replace(/[^\wก-๙]+/g,'').slice(0,18)}
+function hydrateRelations(){
+  state.jobs=(state.jobs||[]).map((j,i)=>({...j,id:j.id||j.jobNo||safeId('JOB',i),items:Array.isArray(j.items)?j.items:[]}));
+  state.customers=Array.isArray(state.customers)?state.customers:[];
+  state.vehicles=Array.isArray(state.vehicles)?state.vehicles:[];
+  state.jobs.forEach(j=>{
+    if(!j.customerId)j.customerId=safeId('C',j.phone||j.customerName||j.id);
+    if(!state.customers.find(c=>c.id===j.customerId)){
+      state.customers.push({id:j.customerId,name:j.customerName||j.custName||'-',phone:j.phone||'-',line:j.line||'-',type:j.customerType||'ทั่วไป'});
     }
-
-    async function loadDashboardData(force=false){
-      const loading=document.getElementById("loadingCover"), status=document.getElementById("apiStatus");
-      loading.classList.add("show");
-      try{
-        if(!CONFIG.API_URL){
-          dashboardData={...FALLBACK_DATA,...dashboardData};
-          status.textContent="ยังไม่ได้ใส่ Apps Script URL จึงแสดงข้อมูลตัวอย่างจาก DASHBOARD_DATA ในไฟล์ที่แนบไว้";
-          renderAll(); return;
-        }
-        const url=`${CONFIG.API_URL}?action=${encodeURIComponent(CONFIG.DASHBOARD_ACTION)}&t=${Date.now()}`;
-        const res=await fetch(url,{method:"GET",cache:"no-store"});
-        if(!res.ok)throw new Error(`HTTP ${res.status}`);
-        const normalized=normalizePayload(await res.json());
-        if(!normalized)throw new Error("รูปแบบข้อมูลจาก API ไม่ถูกต้อง");
-        dashboardData={...FALLBACK_DATA,...normalized};
-        localStorage.setItem("maztech_dashboard_data_cache",JSON.stringify(dashboardData));
-        status.textContent=`เชื่อมต่อ DASHBOARD_DATA สำเร็จ · อัปเดต ${dashboardData.last_updated||todayThai()}`;
-        renderAll(); showToast("ดึงข้อมูล Dashboard_Data สำเร็จ");
-      }catch(err){
-        const cache=localStorage.getItem("maztech_dashboard_data_cache");
-        dashboardData={...FALLBACK_DATA,...(cache?JSON.parse(cache):{})};
-        status.textContent=`ดึงข้อมูลไม่สำเร็จ จึงใช้ข้อมูลสำรอง · ${err.message}`;
-        renderAll(); showToast("ใช้ข้อมูลสำรองก่อน เพราะยังดึงข้อมูลจากชีทไม่ได้");
-      }finally{loading.classList.remove("show")}
+    if(!j.vehicleId)j.vehicleId=safeId('V',j.plate||j.licensePlate||j.id);
+    if(!state.vehicles.find(v=>v.id===j.vehicleId)){
+      state.vehicles.push({id:j.vehicleId,customerId:j.customerId,plate:j.plate||j.licensePlate||'-',brand:'Mazda',model:j.model||j.carModel||'-',year:j.year||'',vin:j.vin||'',color:j.color||'',mileage:num(j.mileage)});
     }
+  });
+}
+async function syncNow(){
+  if(!CONFIG.API_URL){toast('ยังไม่ได้ใส่ Apps Script URL ใน CONFIG.API_URL');return}
+  if(syncBusy)return;
+  syncBusy=true;
+  try{
+    toast('กำลังดึงข้อมูลจาก Google Sheet...');
+    const data=await apiGet(CONFIG.ACTIONS.appState);
+    applyApiState(data);
+    log('Sync ข้อมูลจาก Google Sheet สำเร็จ');
+    render();
+    toast('อัปเดตข้อมูลจาก Google Sheet แล้ว');
+  }catch(err){
+    console.error(err);
+    toast('ดึงข้อมูลไม่สำเร็จ: '+err.message);
+  }finally{syncBusy=false}
+}
+async function autoSyncFromApi(){
+  if(!CONFIG.API_URL)return;
+  try{
+    const data=await apiGet(CONFIG.ACTIONS.appState);
+    applyApiState(data);
+    render();
+  }catch(err){console.warn('Auto sync failed',err)}
+}
+function dnum(key,fallback=0){const d=state.dashboard||{};return num(d[key]!==undefined?d[key]:fallback)}
+function dval(key,fallback=''){const d=state.dashboard||{};return d[key]!==undefined?d[key]:fallback}
 
-    function renderKpiCards(){
-      const d=dashboardData,gp=Number(d.gp_percent_this_month||0);
-      const kpis=[
-        ["เงินคงเหลือปัจจุบัน",`฿ ${baht(d.cash_balance_total)}`,"KBank 225 + 051","💰","#1f7ae0","#e8f2ff",""],
-        ["รายรับเดือนนี้",baht(d.revenue_this_month),`▲ ${percent(d.revenue_mom_pct)} จากเดือนก่อน`,"📈","#059669","#d8fae9","good"],
-        ["รายจ่ายเดือนนี้",baht(d.expense_this_month),`▼ ${percent(d.expense_mom_pct)} จากเดือนก่อน`,"📉","#f59e0b","#fff1c7",Number(d.expense_mom_pct)>0?"bad":""],
-        ["กำไรสุทธิเบื้องต้น",baht(d.net_profit_this_month),`GP ${percent(gp)} ${gp>=0?"▲ ดีขึ้น":"▼ ต้องตรวจสอบ"}`,"✅","#059669","#d8fae9",gp>=0?"good":"bad"],
-        ["รถกำลังซ่อม",`${baht(d.jobs_in_progress)} คัน`,`ช่าง ${baht(d.mechanics_on_duty)} คน กำลังดูแล`,"🔧","#1f7ae0","#e8f2ff",""],
-        ["รถรออะไหล่",`${baht(d.jobs_waiting_parts)} คัน`,`${baht(d.parts_waiting_critical)} คันตามเงื่อนไขเตือน`,"⏳","#f59e0b","#fff1c7",Number(d.parts_waiting_critical)>0?"bad":""],
-        ["รถพร้อมส่งมอบ",`${baht(d.jobs_ready_delivery)} คัน`,"แจ้งลูกค้าแล้ว","🚙","#059669","#d8fae9","good"],
-        ["ลูกหนี้ค้างชำระ",baht(d.ar_overdue_amount),`${baht(d.ar_overdue_count)} ราย เกิน ${baht(d.ar_overdue_days_threshold)} วัน`,"⚠️","#ef4444","#ffe1e6",Number(d.ar_overdue_count)>0?"bad":""]
-      ];
-      document.getElementById("kpiGrid").innerHTML=kpis.map(c=>`<article class="kpi-card" style="--accent:${c[4]};--icon-bg:${c[5]};"><div class="kpi-icon">${c[3]}</div><div class="kpi-label">${c[0]}</div><div class="kpi-value">${c[1]}</div><div class="kpi-sub ${c[6]}">${c[2]}</div></article>`).join("");
-      document.getElementById("jobBadge").textContent=baht(Number(d.jobs_in_progress||0)+Number(d.jobs_waiting_parts||0)+Number(d.jobs_ready_delivery||0));
-    }
-
-    function chartOptions(unit){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:14,usePointStyle:true,font:{family:"Kanit"}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${baht(ctx.raw)} ${unit}`}}},scales:{x:{grid:{color:"rgba(15,39,71,.06)"},ticks:{font:{family:"Kanit"}}},y:{grid:{color:"rgba(15,39,71,.08)"},ticks:{font:{family:"Kanit"},callback:v=>unit==="บาท"?`${Math.round(v/1000)}K`:v}}}}}
-    function renderCharts(){
-      const labels=["พ.ย.","ธ.ค.","ม.ค.","ก.พ.","มี.ค.","เม.ย."], r=Number(dashboardData.revenue_this_month||0), e=Number(dashboardData.expense_this_month||0);
-      if(incomeChart)incomeChart.destroy(); if(carsChart)carsChart.destroy();
-      incomeChart=new Chart(document.getElementById("incomeChart"),{type:"bar",data:{labels,datasets:[{label:"รายรับ",data:[410000,385000,458000,490000,470000,r||521800],backgroundColor:"rgba(31,122,224,.75)",borderRadius:7},{label:"รายจ่าย",data:[225000,210000,270000,305000,292000,e||218400],backgroundColor:"rgba(245,158,11,.65)",borderRadius:7}]},options:chartOptions("บาท")});
-      carsChart=new Chart(document.getElementById("carsChart"),{type:"line",data:{labels,datasets:[{label:"จำนวนรถ (คัน)",data:[39,41,44,45,42,Number(dashboardData.jobs_this_month_count||47)||47],borderColor:"#059669",backgroundColor:"rgba(5,150,105,.12)",fill:true,tension:.42,pointRadius:5}]},options:chartOptions("คัน")});
-    }
-
-    function renderOtherPages(){
-      const d=dashboardData;
-      const pages={
-        jobs:["งานซ่อมทั้งหมด","สรุปสถานะงานจาก DASHBOARD_DATA ก่อนต่อรายละเอียดจาก JOB_HEADER ภายหลัง",[["รถกำลังซ่อม",`${baht(d.jobs_in_progress)} คัน`],["รถรออะไหล่",`${baht(d.jobs_waiting_parts)} คัน`],["รถพร้อมส่งมอบ",`${baht(d.jobs_ready_delivery)} คัน`],["งานเกินกำหนด",`${baht(d.jobs_overdue_this_month)} งาน`]]],
-        intake:["รับรถเข้า / เปิดจ๊อบ","เตรียมไว้สำหรับฟอร์มเปิดจ๊อบใหม่ เมื่อเชื่อม Apps Script แล้วจะเขียนกลับ JOB_HEADER โดยตรง",[["จำนวนงานเดือนนี้",`${baht(d.jobs_this_month_count)} งาน`],["มูลค่างานเฉลี่ย",`฿ ${baht(d.avg_job_value_this_month)}`]]],
-        parts:["อะไหล่ / คลัง","สรุปสถานะอะไหล่จาก Dashboard_Data และเตรียมต่อ PARTS_MASTER ภายหลัง",[["รถรออะไหล่",`${baht(d.jobs_waiting_parts)} คัน`],["รายการที่ควรเตือน",`${baht(d.parts_waiting_critical)} รายการ`]]],
-        customers:["ลูกค้า / รถ","หน้าแสดงภาพรวมลูกค้าและรถ เตรียมต่อ CUSTOMER_MASTER + CAR_MASTER ภายหลัง",[["ลูกหนี้ค้างชำระ",`${baht(d.ar_overdue_count)} ราย`],["ยอดค้างรวม",`฿ ${baht(d.ar_overdue_amount)}`]]],
-        cashflow:["รายรับ-รายจ่าย","ภาพรวมบัญชีจาก DASHBOARD_DATA ซึ่งคำนวณจาก DAILY_CASHFLOW",[["เงินคงเหลือรวม",`฿ ${baht(d.cash_balance_total)}`],["KBank 225",`฿ ${baht(d.cash_kbank_225)}`],["KBank 051",`฿ ${baht(d.cash_kbank_051)}`],["กำไรสะสม",`฿ ${baht(d.net_profit_all_time)}`]]],
-        reports:["รายงาน / Export","สรุปตัวเลขพร้อมส่งออก ใช้ข้อมูลกลางจาก Dashboard_Data เป็นหลัก",[["รายรับสะสม",`฿ ${baht(d.revenue_all_time)}`],["รายจ่ายสะสม",`฿ ${baht(d.expense_all_time)}`],["กำไรพร้อมแบ่งสะสม",`฿ ${baht(d.distributable_cumulative)}`]]],
-        audit:["Audit Log","เตรียมไว้แสดงประวัติการแก้ไขและการซิงก์ข้อมูลจาก Apps Script",[["อัปเดตล่าสุด",d.last_updated||"-"],["แหล่งข้อมูล","DASHBOARD_DATA"]]],
-        settings:["ตั้งค่าระบบ","ตั้งค่า API URL, เป้ารายรับ และเงื่อนไขการเตือน",[["เป้ารายรับ/เดือน",`฿ ${baht(d.budget_revenue_monthly)}`],["อัตรากันสำรอง",percent(d.reserve_rate)],["ค่าใช้จ่ายคงที่",`฿ ${baht(d.fixed_cost_monthly)}`]]]
-      };
-      Object.entries(pages).forEach(([key,p])=>{
-        const el=document.getElementById(`page-${key}`);
-        el.innerHTML=`<div class="hero"><div><h2>${p[0]}</h2><p>${p[1]}</p></div><button class="primary-btn" onclick="loadDashboardData(true)">รีเฟรชข้อมูล</button></div><div class="page-card"><h3 style="margin:0 0 4px;">ข้อมูลสรุปจาก DASHBOARD_DATA</h3><p style="margin:0;color:#7888a2;font-size:13px;">หน้านี้กดใช้งานได้แล้ว และใช้ข้อมูลชุดเดียวกับ Dashboard เพื่อให้ตัวเลขไม่เพี้ยน</p><div class="metric-list">${p[2].map(x=>`<div class="mini-metric"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("")}</div><div class="table-wrap"><table><thead><tr><th>Metric</th><th>ค่า</th><th>หมายเหตุ</th></tr></thead><tbody>${p[2].map(x=>`<tr><td><strong>${x[0]}</strong></td><td>${x[1]}</td><td><span class="status-pill">อ่านจาก DASHBOARD_DATA</span></td></tr>`).join("")}</tbody></table></div></div>`;
-      });
-    }
-
-    function renderAll(){document.getElementById("todayText").textContent=todayThai();document.getElementById("dashboardSubtitle").textContent=`ภาพรวมงานซ่อม รายรับรายจ่าย และสถานะงานวันนี้ — ${todayThai()}`;renderKpiCards();renderCharts();renderOtherPages()}
-    function switchPage(page){document.querySelectorAll(".page").forEach(el=>el.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(el=>el.classList.remove("active"));document.getElementById(`page-${page}`).classList.add("active");document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add("active");document.getElementById("crumbTitle").textContent=pageNames[page]||page;document.querySelector(".main").scrollTop=0}
-    function showToast(message){const t=document.getElementById("toast");t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600)}
-    document.addEventListener("click",e=>{const target=e.target.closest("[data-page]");if(target)switchPage(target.dataset.page)});
-    document.getElementById("refreshBtn").addEventListener("click",()=>loadDashboardData(true));
-    document.getElementById("globalSearch").addEventListener("input",e=>{const q=e.target.value.trim();if(q.length>1)showToast(`ค้นหา: ${q} — ขั้นต่อไปจะเชื่อม JOB_HEADER / CUSTOMER_MASTER`)});
-    loadDashboardData();
-  </script>
+function deepMerge(base,extra){if(!extra||typeof extra!=='object')return base;Object.keys(extra).forEach(k=>{if(extra[k]&&typeof extra[k]==='object'&&!Array.isArray(extra[k])&&base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k]))base[k]=deepMerge(base[k],extra[k]);else base[k]=extra[k];});return base}
+function load(){try{return deepMerge(structuredClone(defaultState),JSON.parse(localStorage.getItem(KEY))||{})}catch(e){return structuredClone(defaultState)}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function log(text){state.logs.unshift({at:new Date().toLocaleString('th-TH'),text});state.logs=state.logs.slice(0,200);save();}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
+function jobTotal(j){return (j.items||[]).reduce((s,i)=>s+num(i.qty)*num(i.sell),0)}
+function jobCost(j){return (j.items||[]).reduce((s,i)=>s+num(i.qty)*num(i.cost),0)}
+function customer(id){return state.customers.find(x=>x.id===id)||{name:'-',phone:'-',line:'-',type:'-'}}
+function vehicle(id){return state.vehicles.find(x=>x.id===id)||{plate:'-',model:'-',brand:'-',year:'-',mileage:0}}
+function part(id){return state.parts.find(x=>x.id===id)}
+function statusBadge(s){const m={'รับรถเข้า':'b-blue','ตรวจเช็ก':'b-teal','รออะไหล่':'b-yellow','กำลังซ่อม':'b-orange','พร้อมส่งมอบ':'b-purple','ส่งมอบแล้ว':'b-green','ยกเลิก':'b-gray'};return `<span class="badge ${m[s]||'b-gray'}">${s}</span>`}
+function payBadge(s){const m={'ยังไม่ชำระ':'b-gray','มัดจำแล้ว':'b-yellow','ชำระบางส่วน':'b-orange','ชำระครบ':'b-green','ค้างชำระ':'b-red'};return `<span class="badge ${m[s]||'b-gray'}">${s}</span>`}
+function go(p){state.page=p;save();render()}
+function selectJob(id){state.selectedJobId=id;state.page='detail';save();render()}
+function renderNav(){let html='';menus.forEach(m=>{if(m.length===2&&['main','ops','system'].includes(m[0])) html+=`<div class="nav-section">${m[1]}</div>`; else html+=`<div class="nav-item ${state.page===m[0]?'active':''}" onclick="go('${m[0]}')"><span>${m[1]}</span>${m[0]==='jobs'?`<span class="nav-badge">${state.jobs.length}</span>`:''}</div>`});document.getElementById('nav').innerHTML=html;}
+function render(){renderNav();document.getElementById('brandName').textContent=state.settings.company;document.getElementById('todayText').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});const title={dashboard:'Dashboard',jobs:'งานซ่อมทั้งหมด',newjob:'รับรถเข้า / เปิดจ๊อบ',detail:'รายละเอียดงาน',parts:'อะไหล่ / คลัง',customers:'ลูกค้า / รถ',cashflow:'รายรับ-รายจ่าย',reports:'รายงาน / Export',audit:'Audit Log',settings:'ตั้งค่าระบบ'}[state.page]||'Dashboard';document.getElementById('crumbTitle').textContent=title;document.getElementById('view').innerHTML=pages[state.page]?pages[state.page]():pages.dashboard();setTimeout(afterRender,0)}
+function afterRender(){if(document.getElementById('jobTable')) renderJobTable(); if(document.getElementById('cfTable')) renderCashflowTable();}
+const pages={
+  dashboard(){
+    const jobs=state.jobs||[], cfIn=sumCF('IN'), cfOut=sumCF('OUT');
+    const fallbackRevenue=jobs.reduce((s,j)=>s+jobTotal(j),0), fallbackCost=jobs.reduce((s,j)=>s+jobCost(j),0);
+    const dashboardRevenue=dnum('revenue_this_month',fallbackRevenue), dashboardExpense=dnum('expense_this_month',cfOut), dashboardCash=dnum('cash_balance_total',cfIn-cfOut);
+    const dashboardNet=dnum('net_profit_this_month',dashboardRevenue-dashboardExpense), dashboardGP=dnum('gp_percent_this_month',dashboardRevenue?((dashboardRevenue-fallbackCost)/dashboardRevenue*100):0);
+    const ar=dnum('ar_overdue_amount',jobs.reduce((s,j)=>s+Math.max(0,jobTotal(j)-num(j.paidAmount)),0));
+    const jobsIn=dnum('jobs_in_progress',jobs.filter(j=>['รับรถเข้า','ตรวจเช็ก','รออะไหล่','กำลังซ่อม'].includes(j.status)).length);
+    const waitParts=dnum('jobs_waiting_parts',jobs.filter(j=>j.status==='รออะไหล่').length);
+    const ready=dnum('jobs_ready_delivery',jobs.filter(j=>j.status==='พร้อมส่งมอบ').length);
+    const statuses=['รับรถเข้า','ตรวจเช็ก','รออะไหล่','กำลังซ่อม','พร้อมส่งมอบ','ส่งมอบแล้ว'];
+    const max=Math.max(1,...statuses.map(s=>jobs.filter(j=>j.status===s).length));
+    return `<div class="page-head"><div><div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:1.5px">OWNER DASHBOARD</div><div class="page-title">กำไรหุ้นส่วน / สุขภาพการเงิน / สุขภาพงานซ่อม</div><div class="page-sub">Dashboard ใช้ข้อมูลจากชีท DASHBOARD_DATA เท่านั้น ส่วนเมนูงานซ่อม/ลูกค้า/อะไหล่/รายรับรายจ่าย ดึงจากชีทจริงของแต่ละเมนู</div></div><div class="actions"><button class="btn primary" onclick="go('newjob')">+ เปิดจ๊อบใหม่</button><button class="btn out" onclick="syncNow()">🔄 ดึงข้อมูลชีท</button></div></div>
+    <div class="grid kpi-grid">
+      ${kpi('💰','เงินคงเหลือปัจจุบัน',money(dashboardCash),`KBank 225: ${money(dnum('cash_kbank_225',0))} / 051: ${money(dnum('cash_kbank_051',0))}`,'#1e6fc4','#dbeafe')}
+      ${kpi('📈','รายรับเดือนนี้',money(dashboardRevenue),`จาก DASHBOARD_DATA · ${dval('last_updated','')}`,'#059669','#d1fae5')}
+      ${kpi('📉','รายจ่ายเดือนนี้',money(dashboardExpense),'จาก DASHBOARD_DATA','#f59e0b','#fef3c7')}
+      ${kpi('✅','กำไรสุทธิเบื้องต้น',money(dashboardNet),`GP ${Number(dashboardGP||0).toFixed(1)}%`,'#059669','#d1fae5')}
+      ${kpi('🔧','รถกำลังซ่อม',jobsIn+' คัน',`ช่าง ${dnum('mechanics_on_duty',0)} คน กำลังดูแล`,'#1e6fc4','#dbeafe')}
+      ${kpi('⏳','รถรออะไหล่',waitParts+' คัน',`${dnum('parts_waiting_critical',0)} คันตามเงื่อนไขเตือน`,'#f59e0b','#fef3c7')}
+      ${kpi('🚗','รถพร้อมส่งมอบ',ready+' คัน','ควรแจ้งลูกค้า','#7c3aed','#ede9fe')}
+      ${kpi('⚠️','ลูกหนี้ค้างชำระ',money(ar),`${dnum('ar_overdue_count',0)} ราย เกิน ${dnum('ar_overdue_days_threshold',7)} วัน`,'#dc2626','#fee2e2')}
+    </div>
+    <div class="charts">
+      <div class="card"><div class="card-head"><div><div class="card-title">สุขภาพงานซ่อม</div><div class="page-sub">กราฟนี้ดึงสถานะจาก Job_Header ไม่ใช่ DASHBOARD_DATA</div></div></div><div class="card-body"><div class="mini-bars">${statuses.map(s=>{const c=jobs.filter(j=>j.status===s).length;return `<div class="bar-row"><div class="bar-label">${s}</div><div class="track"><div class="fill" style="width:${(c/max)*100}%;background:${statusColor(s)}"></div></div><div class="bar-val">${c} งาน</div></div>`}).join('')}</div></div></div>
+      <div class="card"><div class="card-head"><div><div class="card-title">แจ้งเตือนสำคัญ</div><div class="page-sub">มาจาก Parts_Master, Job_Header และยอดค้างรับ</div></div><button class="btn out sm" onclick="go('audit')">ดู Log</button></div><div class="card-body">${alertsHtml()}</div></div>
+    </div>
+    <div class="two-col"><div class="card"><div class="card-head"><div><div class="card-title">งานล่าสุด</div><div class="page-sub">อ่านจาก Job_Header + Job_Detail</div></div><button class="btn out sm" onclick="go('jobs')">ดูทั้งหมด</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Job No</th><th>ทะเบียน</th><th>ลูกค้า</th><th>สถานะ</th><th>ชำระเงิน</th><th class="right">ยอดงาน</th></tr></thead><tbody>${jobs.slice().reverse().slice(0,8).map(jobRowMini).join('')||'<tr><td colspan="6" class="empty">ยังไม่มีข้อมูล Job_Header</td></tr>'}</tbody></table></div></div>
+    <div class="card"><div class="card-head"><div><div class="card-title">สรุปเจ้าของอู่</div><div class="page-sub">ใช้ค่าหลักจาก DASHBOARD_DATA</div></div></div><div class="card-body">${moneyRows([['รายรับเดือนนี้',dashboardRevenue],['รายจ่ายเดือนนี้',dashboardExpense],['กำไรสุทธิเดือนนี้',dashboardNet],['เงินสำรอง '+(Number(dval('reserve_rate',state.settings.reservePct/100))*100).toFixed(0)+'%',dnum('reserve_amount_this_month',dashboardNet*state.settings.reservePct/100)],['กำไรพร้อมแบ่ง',dnum('distributable_profit_this_month',dashboardNet-(dashboardNet*state.settings.reservePct/100))],['หุ้นส่วน/คน',dnum('partner_ae_share',(dashboardNet-(dashboardNet*state.settings.reservePct/100))/4)],['ลูกหนี้ค้างรับ',ar]])}</div></div></div>`;
+  },
+  jobs(){return `<div class="page-head"><div><div class="page-title">งานซ่อมทั้งหมด</div><div class="page-sub">ค้นหา กรอง ดูรายละเอียด เปลี่ยนสถานะ และ Export ข้อมูลได้จริง</div></div><div class="actions"><button class="btn primary" onclick="go('newjob')">+ เปิดจ๊อบใหม่</button><button class="btn out" onclick="exportCSV('jobs')">📥 Export CSV</button><button class="btn out" onclick="window.print()">🖨 พิมพ์</button></div></div>
+    <div class="filter-panel"><div class="filter-row">
+      <div class="field"><label>ค้นหา</label><input id="fQ" oninput="renderJobTable()" placeholder="ทะเบียน / ลูกค้า / Job No"></div>
+      <div class="field"><label>สถานะงาน</label><select id="fStatus" onchange="renderJobTable()"><option value="">-- ทุกสถานะ --</option>${jobStatuses().map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>สถานะชำระ</label><select id="fPay" onchange="renderJobTable()"><option value="">-- ทุกสถานะ --</option>${payStatuses().map(x=>`<option>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>ช่าง</label><input id="fMech" oninput="renderJobTable()" placeholder="ชื่อช่าง"></div>
+      <button class="btn soft" onclick="clearJobFilters()">ล้างตัวกรอง</button>
+    </div></div>
+    <div class="grid" style="grid-template-columns:repeat(6,1fr)">${jobStatuses().slice(0,6).map(s=>`<div class="kpi" style="--c:${statusColor(s)}"><div class="kpi-label">${s}</div><div class="kpi-value">${state.jobs.filter(j=>j.status===s).length}</div></div>`).join('')}</div>
+    <div class="card"><div class="card-head"><div class="card-title">รายการงาน</div><div class="page-sub" id="jobCount"></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Job No</th><th>วันรับรถ</th><th>ทะเบียน</th><th>รุ่นรถ</th><th>ลูกค้า</th><th>เบอร์โทร</th><th>อาการ</th><th class="right">ยอดงาน</th><th class="right">รับแล้ว</th><th>สถานะงาน</th><th>ชำระเงิน</th><th>ผู้รับผิดชอบ</th><th>จัดการ</th></tr></thead><tbody id="jobTable"></tbody></table></div></div>`},
+  newjob(){return `<div class="page-head"><div><div class="page-title">รับรถเข้า / เปิดจ๊อบใหม่</div><div class="page-sub">กรอกครั้งเดียว ระบบจะสร้างลูกค้า รถ งานซ่อม และเชื่อมไปทุกเมนู</div></div></div>
+    <form class="card" onsubmit="createJob(event)"><div class="card-head"><div class="card-title">ข้อมูลรับรถ</div></div><div class="card-body"><div class="form-grid">
+      ${field('ชื่อลูกค้า','custName','text','คุณ...')}${field('เบอร์โทร','phone','text','08x-xxx-xxxx')}${field('LINE','line','text','@line')}${selectField('ประเภทลูกค้า','custType',['ทั่วไป','ลูกค้าประจำ','VIP','Fleet'])}
+      ${field('ทะเบียนรถ','plate','text','กข-1234')}${selectField('รุ่นรถ','model',['Mazda2','Mazda3','CX-3','CX-30','CX-5','CX-8','BT-50','อื่นๆ'])}${field('ปีรถ','year','text','2021')}${field('เลขไมล์','mileage','number','82450')}
+      ${field('วันรับรถ','dateIn','date',today())}${field('วันนัดรับ','dueDate','date',today())}${selectField('สถานะเริ่มต้น','status',jobStatuses())}${field('ผู้รับผิดชอบ','mechanic','text','ชื่อช่าง')}
+      <div class="field span-2"><label>อาการที่ลูกค้าแจ้ง</label><textarea name="symptom" required placeholder="เช่น ไฟโชว์ เครื่องสั่น ควันดำ"></textarea></div>
+      <div class="field span-2"><label>ผลตรวจเช็กเบื้องต้น / งานที่ประเมิน</label><textarea name="diagnosis" placeholder="ระบุสิ่งที่ตรวจพบ"></textarea></div>
+      <div class="field span-4"><label>หมายเหตุภายใน</label><textarea name="internalNote" placeholder="ข้อมูลสำหรับทีมงาน ลูกค้าไม่เห็น"></textarea></div>
+      ${selectField('รายการแรก', 'itemPart', state.parts.map(p=>p.id+'|'+p.name))}${field('จำนวน','qty','number','1')}${field('ราคาขายรวม/หน่วย','sell','number','0')}${selectField('สถานะชำระเงิน','payment',payStatuses())}
+      ${field('รับชำระแล้ว','paidAmount','number','0')}
+    </div><div style="margin-top:14px" class="actions"><button class="btn primary" type="submit">บันทึกและเปิดจ๊อบ</button><button class="btn out" type="reset">ล้างฟอร์ม</button></div></div></form>`},
+  detail(){const j=state.jobs.find(x=>x.id===state.selectedJobId)||state.jobs[0]; if(!j)return `<div class="empty">ยังไม่มีงานซ่อม</div>`; const c=customer(j.customerId), v=vehicle(j.vehicleId), total=jobTotal(j), cost=jobCost(j), balance=Math.max(0,total-num(j.paidAmount));return `<div class="page-head"><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="page-title mono">${j.id}</div>${statusBadge(j.status)}${payBadge(j.payment)}</div><div class="page-sub">เปิดจ๊อบ: ${thDate(j.dateIn)} · นัดรับ: ${thDate(j.dueDate)} · ผู้รับผิดชอบ: ${j.mechanic||'-'}</div></div><div class="actions"><button class="btn warn" onclick="changeJobStatus('${j.id}')">เปลี่ยนสถานะ</button><button class="btn primary" onclick="receivePayment('${j.id}')">💰 รับชำระ</button><button class="btn out" onclick="printJob('${j.id}')">🖨 เอกสาร</button></div></div>
+    <div class="detail-layout"><div class="grid">
+      <div class="card"><div class="card-head"><div class="card-title">👤 ข้อมูลลูกค้าและรถ</div><button class="btn out sm" onclick="openEditCustomer('${c.id}')">แก้ไข</button></div><div class="card-body"><div class="info-grid">
+        ${info('ชื่อลูกค้า',c.name)}${info('เบอร์โทร',c.phone)}${info('LINE / ช่องทาง',c.line||'-')}${info('ประเภทลูกค้า',`<span class="badge b-purple">${c.type||'ทั่วไป'}</span>`)}${info('ทะเบียนรถ',`<span class="plate">${v.plate}</span>`)}${info('รุ่นรถ',`${v.brand||'Mazda'} ${v.model} (${v.year||'-'})`)}${info('เลขไมล์',Number(v.mileage||0).toLocaleString()+' กม.')}${info('สีรถ',v.color||'-')}${info('VIN / เลขตัวถัง',v.vin||'-')}${info('เจ้าของ',c.name)}
+      </div></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">🔧 อาการรถและรายละเอียดงาน</div></div><div class="card-body"><div class="note-box"><div class="note-label">อาการที่ลูกค้าแจ้ง</div><div class="note-text">${j.symptom||'-'}</div></div><div class="note-box"><div class="note-label">ผลตรวจเช็กจากช่าง</div><div class="note-text">${j.diagnosis||'-'}</div></div><div class="note-box"><div class="note-label">หมายเหตุภายใน</div><div class="note-text">${j.internalNote||'-'}</div></div></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">📦 รายการอะไหล่ / บริการ</div><button class="btn primary sm" onclick="openAddItem('${j.id}')">+ เพิ่มรายการ</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>รายการ</th><th>ประเภท</th><th class="right">จำนวน</th><th class="right">ต้นทุน/หน่วย</th><th class="right">ขาย/หน่วย</th><th class="right">รวมต้นทุน</th><th class="right">รวมขาย</th><th class="right">GP%</th><th>จัดการ</th></tr></thead><tbody>${(j.items||[]).map((it,idx)=>itemRow(j,it,idx)).join('')}</tbody></table></div></div>
+    </div><div class="grid">
+      <div class="card"><div class="card-head"><div class="card-title">💳 สรุปค่าใช้จ่าย</div></div><div class="card-body">${moneyRows([['ยอดขายรวม',total],['ต้นทุนรวม',cost],['กำไรขั้นต้น',total-cost],['รับชำระแล้ว',j.paidAmount],['คงเหลือ',balance]])}</div></div>
+      <div class="card"><div class="card-head"><div class="card-title">⏱ Timeline</div></div><div class="card-body"><div class="timeline">${jobStatuses().map(s=>`<div class="tl ${timelineClass(j.status,s)}"><div class="tl-dot"></div><div class="tl-text"><div class="tl-title">${s}</div><div class="tl-time">${s===j.status?'สถานะปัจจุบัน':'-'}</div></div></div>`).join('')}</div></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Quick Actions</div></div><div class="card-body"><div class="grid" style="grid-template-columns:1fr 1fr"><button class="btn out" onclick="go('jobs')">กลับรายการ</button><button class="btn green" onclick="duplicateJob('${j.id}')">ทำซ้ำ</button><button class="btn out" onclick="exportOneJob('${j.id}')">Export</button><button class="btn danger" onclick="deleteJob('${j.id}')">ลบงาน</button></div></div></div>
+    </div></div>`},
+  parts(){return `<div class="page-head"><div><div class="page-title">อะไหล่ / คลัง</div><div class="page-sub">จัดการ Part Master, ต้นทุน, ราคาขาย, สต๊อก และ Supplier</div></div><div class="actions"><button class="btn primary" onclick="openPartForm()">+ เพิ่มอะไหล่</button><button class="btn out" onclick="exportCSV('parts')">Export CSV</button></div></div>
+  <div class="card"><div class="card-head"><div class="card-title">Part Master</div><input id="partQ" oninput="renderPartsTable()" placeholder="ค้นหาอะไหล่ / Part No" style="padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc"></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Part No</th><th>รายการ</th><th>ประเภท</th><th>Supplier</th><th>หน่วย</th><th class="right">ต้นทุน</th><th class="right">ขาย</th><th class="right">สต๊อก</th><th class="right">GP%</th><th>จัดการ</th></tr></thead><tbody id="partsTable">${partsRows()}</tbody></table></div></div>`},
+  customers(){return `<div class="page-head"><div><div class="page-title">ลูกค้า / รถ</div><div class="page-sub">ค้นหาประวัติลูกค้าและรถจากทะเบียนหรือเบอร์โทร</div></div><div class="actions"><button class="btn primary" onclick="go('newjob')">+ เพิ่มจากการเปิดจ๊อบ</button><button class="btn out" onclick="exportCSV('customers')">Export ลูกค้า</button></div></div>
+    <div class="filter-panel"><div class="filter-row"><div class="field"><label>ค้นหา</label><input id="custQ" oninput="renderCustomerList()" placeholder="ชื่อ / เบอร์ / ทะเบียน"></div></div></div><div class="grid" id="customerList"></div>`},
+  cashflow(){return `<div class="page-head"><div><div class="page-title">รายรับ-รายจ่าย</div><div class="page-sub">ระบบ 2 บัญชี: ${state.settings.account1} และ ${state.settings.account2}</div></div><div class="actions"><button class="btn primary" onclick="openCashflowForm()">+ เพิ่มรายการ</button><button class="btn out" onclick="exportCSV('cashflow')">Export CSV</button></div></div>
+    <div class="grid kpi-grid">${kpi('🏦',state.settings.account1,money(accountBal(state.settings.account1)),'ยอดคงเหลือ','#1e6fc4','#dbeafe')}${kpi('🏦',state.settings.account2,money(accountBal(state.settings.account2)),'ยอดคงเหลือ','#7c3aed','#ede9fe')}${kpi('⬆️','เงินเข้า',money(sumCF('IN')),'รวมทุกบัญชี','#059669','#d1fae5')}${kpi('⬇️','เงินออก',money(sumCF('OUT')),'รวมทุกบัญชี','#dc2626','#fee2e2')}</div>
+    <div class="card"><div class="card-head"><div class="card-title">รายการเคลื่อนไหวเงินสด/ธนาคาร</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>วันที่</th><th>บัญชี</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th><th>Ref</th><th class="right">เงินเข้า</th><th class="right">เงินออก</th><th class="right">Signed</th><th>จัดการ</th></tr></thead><tbody id="cfTable"></tbody></table></div></div>`},
+  reports(){const revenue=state.jobs.reduce((s,j)=>s+jobTotal(j),0), cost=state.jobs.reduce((s,j)=>s+jobCost(j),0), fixed=state.cashflow.filter(x=>x.direction==='OUT'&&['ค่าเช่า','เงินเดือน','ค่าน้ำไฟ'].includes(x.category)).reduce((s,x)=>s+num(x.amount),0), net=revenue-cost-fixed, reserve=net*state.settings.reservePct/100;return `<div class="page-head"><div><div class="page-title">รายงาน / Export</div><div class="page-sub">สรุปสำหรับหุ้นส่วน: P&L เบื้องต้น, เงินสำรอง และปันผลโดยประมาณ</div></div><div class="actions"><button class="btn out" onclick="window.print()">พิมพ์รายงาน</button><button class="btn primary" onclick="exportJSON()">สำรองข้อมูล JSON</button></div></div>
+  <div class="card"><div class="card-head"><div class="card-title">รายงานผลประกอบการเบื้องต้น</div><div class="page-sub">คำนวณจากงานซ่อมและ Cashflow ในระบบ</div></div><div class="card-body"><div class="grid" style="grid-template-columns:1fr 1fr;gap:18px"><div>${moneyRows([['ยอดขายจากงานซ่อม',revenue],['ต้นทุนอะไหล่/บริการ',cost],['กำไรขั้นต้น',revenue-cost],['ค่าใช้จ่ายประจำที่บันทึก',fixed],['กำไรสุทธิเบื้องต้น',net]])}</div><div>${moneyRows([['เงินสำรอง '+state.settings.reservePct+'%',reserve],['กำไรก่อนแบ่งหลังสำรอง',net-reserve],['หุ้นส่วน 4 คน / คน',(net-reserve)/4],['ลูกหนี้ค้างรับ',state.jobs.reduce((s,j)=>s+Math.max(0,jobTotal(j)-num(j.paidAmount)),0)],['เงินคงเหลือบัญชี',sumCF('IN')-sumCF('OUT')]])}</div></div></div></div>
+  <div class="card"><div class="card-head"><div class="card-title">สรุปยอดตามรุ่นรถ</div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>รุ่นรถ</th><th class="right">จำนวนงาน</th><th class="right">ยอดขาย</th><th class="right">กำไรขั้นต้น</th></tr></thead><tbody>${modelReportRows()}</tbody></table></div></div>`},
+  audit(){return `<div class="page-head"><div><div class="page-title">Audit Log</div><div class="page-sub">บันทึกการทำงานสำคัญในระบบ</div></div><button class="btn danger" onclick="clearLogs()">ล้าง Log</button></div><div class="card"><div class="table-wrap"><table class="data-table"><thead><tr><th>เวลา</th><th>รายการ</th></tr></thead><tbody>${state.logs.map(l=>`<tr><td>${l.at}</td><td>${l.text}</td></tr>`).join('')||'<tr><td colspan="2" class="empty">ไม่มีข้อมูล</td></tr>'}</tbody></table></div></div>`},
+  settings(){return `<div class="page-head"><div><div class="page-title">ตั้งค่าระบบ</div><div class="page-sub">ค่าพื้นฐานสำหรับใช้งานจริง</div></div></div><form class="card" onsubmit="saveSettings(event)"><div class="card-head"><div class="card-title">ข้อมูลระบบ</div></div><div class="card-body"><div class="form-grid">${fieldVal('ชื่ออู่','company',state.settings.company)}${fieldVal('Prefix เลข Job','jobPrefix',state.settings.jobPrefix)}${fieldVal('บัญชีรับเงิน','account1',state.settings.account1)}${fieldVal('บัญชีจ่ายเงิน','account2',state.settings.account2)}${fieldVal('VAT %','taxRate',state.settings.taxRate,'number')}${fieldVal('เงินสำรองก่อนปันผล %','reservePct',state.settings.reservePct,'number')}</div><div class="actions" style="margin-top:14px"><button class="btn primary" type="submit">บันทึกตั้งค่า</button><button class="btn out" type="button" onclick="exportJSON()">สำรองข้อมูล</button><button class="btn warn" type="button" onclick="importJSONPrompt()">นำเข้า JSON</button><button class="btn danger" type="button" onclick="resetDemo()">รีเซ็ตข้อมูลตัวอย่าง</button></div></div></form>`}
+};
+function kpi(icon,label,val,note,c,ib){return `<div class="kpi" style="--c:${c};--ib:${ib}"><div class="kpi-icon">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">${val}</div><div class="kpi-note">${note}</div></div>`}
+function jobRowMini(j){const c=customer(j.customerId),v=vehicle(j.vehicleId);return `<tr><td><a class="job-link" onclick="selectJob('${j.id}')">${j.id}</a></td><td><span class="plate">${v.plate}</span></td><td>${c.name}</td><td>${statusBadge(j.status)}</td><td>${payBadge(j.payment)}</td><td class="right">${money(jobTotal(j))}</td></tr>`}
+function renderJobTable(){const el=document.getElementById('jobTable');if(!el)return;const q=(document.getElementById('fQ')?.value||'').toLowerCase(), st=document.getElementById('fStatus')?.value||'', py=document.getElementById('fPay')?.value||'', mech=(document.getElementById('fMech')?.value||'').toLowerCase();let rows=state.jobs.filter(j=>{const c=customer(j.customerId),v=vehicle(j.vehicleId);const hay=[j.id,c.name,c.phone,v.plate,v.model,j.symptom].join(' ').toLowerCase();return (!q||hay.includes(q))&&(!st||j.status===st)&&(!py||j.payment===py)&&(!mech||(j.mechanic||'').toLowerCase().includes(mech))});document.getElementById('jobCount').textContent=`แสดง ${rows.length} จาก ${state.jobs.length} รายการ`;el.innerHTML=rows.slice().reverse().map(j=>{const c=customer(j.customerId),v=vehicle(j.vehicleId);return `<tr><td><a class="job-link" onclick="selectJob('${j.id}')">${j.id}</a></td><td>${thDate(j.dateIn)}</td><td><span class="plate">${v.plate}</span></td><td>${v.model}</td><td>${c.name}</td><td>${c.phone}</td><td style="max-width:190px;white-space:normal">${j.symptom||'-'}</td><td class="right">${money(jobTotal(j))}</td><td class="right">${money(j.paidAmount)}</td><td>${statusBadge(j.status)}</td><td>${payBadge(j.payment)}</td><td>${j.mechanic||'-'}</td><td><button class="btn out sm" onclick="selectJob('${j.id}')">ดู</button> <button class="btn warn sm" onclick="changeJobStatus('${j.id}')">สถานะ</button></td></tr>`}).join('')||'<tr><td colspan="13" class="empty">ไม่พบข้อมูล</td></tr>'}
+function clearJobFilters(){['fQ','fStatus','fPay','fMech'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});renderJobTable()}
+function createJob(e){e.preventDefault();const f=new FormData(e.target), cName=f.get('custName').trim(), phone=f.get('phone').trim(), plate=f.get('plate').trim(); if(!cName||!phone||!plate){toast('กรุณากรอกชื่อ เบอร์ และทะเบียน');return} let c=state.customers.find(x=>x.phone===phone)||{id:uid('C'),name:cName,phone,line:f.get('line'),type:f.get('custType')}; Object.assign(c,{name:cName,phone,line:f.get('line'),type:f.get('custType')}); if(!state.customers.find(x=>x.id===c.id))state.customers.push(c); let v=state.vehicles.find(x=>x.plate===plate)||{id:uid('V'),customerId:c.id,plate}; Object.assign(v,{customerId:c.id,plate,brand:'Mazda',model:f.get('model'),year:f.get('year'),mileage:num(f.get('mileage')),vin:'-',color:'-'}); if(!state.vehicles.find(x=>x.id===v.id))state.vehicles.push(v); const partId=(f.get('itemPart')||'').split('|')[0], p=part(partId), qty=num(f.get('qty'))||1, sell=num(f.get('sell'))||num(p?.sell); const id=nextJobId(); const job={id,dateIn:f.get('dateIn')||today(),dueDate:f.get('dueDate')||'',dateOut:'',customerId:c.id,vehicleId:v.id,status:f.get('status'),payment:f.get('payment'),paidAmount:num(f.get('paidAmount')),mechanic:f.get('mechanic'),symptom:f.get('symptom'),diagnosis:f.get('diagnosis'),internalNote:f.get('internalNote'),items:[]}; if(p)job.items.push({partId:p.id,name:p.name,qty,cost:p.cost,sell,type:p.type}); state.jobs.push(job); if(job.paidAmount>0)addCF({date:job.dateIn,account:state.settings.account1,direction:'IN',category:'รายรับ-งานซ่อม',desc:'รับชำระ '+job.id,amount:job.paidAmount,ref:job.id},false); state.selectedJobId=id;log('เปิดจ๊อบใหม่ '+id+' ทะเบียน '+plate);save();toast('เปิดจ๊อบสำเร็จ '+id);go('detail')}
+function nextJobId(){const d=new Date(), yy=String(d.getFullYear()+543).slice(-2), mm=String(d.getMonth()+1).padStart(2,'0'); const prefix=`${state.settings.jobPrefix}-${yy}${mm}-`; const max=state.jobs.filter(j=>j.id.startsWith(prefix)).map(j=>num(j.id.split('-').pop())).reduce((a,b)=>Math.max(a,b),0)+1; return prefix+String(max).padStart(4,'0')}
+function itemRow(j,it,idx){const totalCost=num(it.qty)*num(it.cost), totalSell=num(it.qty)*num(it.sell), gp=totalSell?((totalSell-totalCost)/totalSell*100).toFixed(1):0;return `<tr><td>${it.name}</td><td><span class="badge ${it.type==='แท้'?'b-blue':it.type==='บริการ'?'b-green':'b-orange'}">${it.type||'-'}</span></td><td class="right">${it.qty}</td><td class="right">${money(it.cost)}</td><td class="right">${money(it.sell)}</td><td class="right">${money(totalCost)}</td><td class="right">${money(totalSell)}</td><td class="right ${gp<10?'down':'up'}">${gp}%</td><td><button class="btn danger sm" onclick="removeItem('${j.id}',${idx})">ลบ</button></td></tr>`}
+function openAddItem(jobId){const opts=state.parts.map(p=>`<option value="${p.id}">${p.partNo} — ${p.name} | สต๊อก ${p.stock}</option>`).join('');openModal('เพิ่มรายการอะไหล่/บริการ',`<form onsubmit="addItem(event,'${jobId}')"><div class="form-grid"><div class="field span-2"><label>เลือกอะไหล่ / บริการ</label><select name="partId" onchange="fillPartPrice(this)">${opts}</select></div><div class="field"><label>จำนวน</label><input name="qty" type="number" value="1" min="0.01" step="0.01"></div><div class="field"><label>ราคาขาย/หน่วย</label><input name="sell" id="modalSell" type="number" value="${state.parts[0]?.sell||0}"></div></div><div class="actions" style="margin-top:14px"><button class="btn primary">เพิ่มรายการ</button></div></form>`)}
+function fillPartPrice(sel){const p=part(sel.value);document.getElementById('modalSell').value=p?p.sell:0}
+function addItem(e,jobId){e.preventDefault();const f=new FormData(e.target), p=part(f.get('partId')), j=state.jobs.find(x=>x.id===jobId); if(!p||!j)return; const qty=num(f.get('qty'))||1; j.items.push({partId:p.id,name:p.name,qty,cost:p.cost,sell:num(f.get('sell'))||p.sell,type:p.type}); if(p.type!=='บริการ')p.stock=Math.max(0,num(p.stock)-qty);log('เพิ่มรายการ '+p.name+' ใน '+jobId);save();closeModal();render();toast('เพิ่มรายการแล้ว')}
+function removeItem(jobId,idx){const j=state.jobs.find(x=>x.id===jobId);if(!j)return;const [it]=j.items.splice(idx,1); const p=part(it.partId); if(p&&p.type!=='บริการ')p.stock+=num(it.qty);log('ลบรายการจาก '+jobId+': '+it.name);save();render();}
+function changeJobStatus(jobId){const j=state.jobs.find(x=>x.id===jobId);if(!j)return;openModal('เปลี่ยนสถานะงาน',`<form onsubmit="saveJobStatus(event,'${jobId}')"><div class="form-grid"><div class="field span-2"><label>สถานะงาน</label><select name="status">${jobStatuses().map(s=>`<option ${j.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="field span-2"><label>สถานะชำระเงิน</label><select name="payment">${payStatuses().map(s=>`<option ${j.payment===s?'selected':''}>${s}</option>`).join('')}</select></div></div><div class="actions" style="margin-top:14px"><button class="btn primary">บันทึก</button></div></form>`)}
+function saveJobStatus(e,jobId){e.preventDefault();const f=new FormData(e.target), j=state.jobs.find(x=>x.id===jobId);j.status=f.get('status');j.payment=f.get('payment');if(j.status==='ส่งมอบแล้ว'&&!j.dateOut)j.dateOut=today();log('เปลี่ยนสถานะ '+jobId+' เป็น '+j.status+' / '+j.payment);save();closeModal();render();toast('บันทึกสถานะแล้ว')}
+function receivePayment(jobId){const j=state.jobs.find(x=>x.id===jobId);if(!j)return;const remain=Math.max(0,jobTotal(j)-num(j.paidAmount));openModal('บันทึกรับชำระ',`<form onsubmit="savePayment(event,'${jobId}')"><div class="form-grid">${fieldVal('วันที่รับเงิน','date',today(),'date')}${selectField('บัญชีรับเงิน','account',[state.settings.account1,state.settings.account2])}${fieldVal('ยอดรับชำระ','amount',remain,'number')}<div class="field"><label>หมายเหตุ</label><input name="desc" value="รับชำระ ${jobId}"></div></div><div class="actions" style="margin-top:14px"><button class="btn primary">บันทึกเงินรับ</button></div></form>`)}
+function savePayment(e,jobId){e.preventDefault();const f=new FormData(e.target), j=state.jobs.find(x=>x.id===jobId), amount=num(f.get('amount')); j.paidAmount=num(j.paidAmount)+amount; j.payment=j.paidAmount>=jobTotal(j)?'ชำระครบ':'ชำระบางส่วน'; addCF({date:f.get('date'),account:f.get('account'),direction:'IN',category:'รายรับ-งานซ่อม',desc:f.get('desc'),amount,ref:jobId},false);log('รับชำระ '+jobId+' '+money(amount));save();closeModal();render();toast('รับชำระแล้ว')}
+function deleteJob(id){if(!confirm('ลบงาน '+id+' ?'))return;state.jobs=state.jobs.filter(j=>j.id!==id);log('ลบงาน '+id);save();go('jobs')}
+function duplicateJob(id){const old=state.jobs.find(j=>j.id===id);if(!old)return;const j=JSON.parse(JSON.stringify(old));j.id=nextJobId();j.dateIn=today();j.dateOut='';j.status='รับรถเข้า';j.payment='ยังไม่ชำระ';j.paidAmount=0;state.jobs.push(j);state.selectedJobId=j.id;log('ทำซ้ำงานจาก '+id+' เป็น '+j.id);save();render();toast('สร้างงานซ้ำแล้ว')}
+function printJob(){window.print()}
+function exportOneJob(id){const j=state.jobs.find(x=>x.id===id);download('job_'+id+'.json',JSON.stringify(j,null,2),'application/json')}
+function partsRows(){const q=(document.getElementById('partQ')?.value||'').toLowerCase();return state.parts.filter(p=>!q||[p.partNo,p.name,p.type,p.supplier].join(' ').toLowerCase().includes(q)).map(p=>{const gp=p.sell?((p.sell-p.cost)/p.sell*100).toFixed(1):0;return `<tr><td class="mono">${p.partNo}</td><td>${p.name}</td><td><span class="badge ${p.type==='แท้'?'b-blue':p.type==='บริการ'?'b-green':'b-orange'}">${p.type}</span></td><td>${p.supplier}</td><td>${p.unit}</td><td class="right">${money(p.cost)}</td><td class="right">${money(p.sell)}</td><td class="right ${p.stock<=2&&p.type!=='บริการ'?'down':''}">${p.stock}</td><td class="right ${gp<10?'down':'up'}">${gp}%</td><td><button class="btn out sm" onclick="openPartForm('${p.id}')">แก้</button> <button class="btn warn sm" onclick="adjustStock('${p.id}')">สต๊อก</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty">ไม่พบข้อมูล</td></tr>'}
+function renderPartsTable(){document.getElementById('partsTable').innerHTML=partsRows()}
+function openPartForm(id){const p=id?part(id):{id:'',partNo:'',name:'',type:'แท้',unit:'ชิ้น',cost:0,sell:0,stock:0,supplier:''};openModal(id?'แก้ไขอะไหล่':'เพิ่มอะไหล่ใหม่',`<form onsubmit="savePart(event,'${id||''}')"><div class="form-grid">${fieldVal('Part No','partNo',p.partNo)}${fieldVal('ชื่อรายการ','name',p.name)}${selectField('ประเภท','type',['แท้','OEM','เทียบ','บริการ'])}${fieldVal('หน่วย','unit',p.unit)}${fieldVal('ต้นทุน','cost',p.cost,'number')}${fieldVal('ราคาขาย','sell',p.sell,'number')}${fieldVal('สต๊อก','stock',p.stock,'number')}${fieldVal('Supplier','supplier',p.supplier)}</div><div class="actions" style="margin-top:14px"><button class="btn primary">บันทึก</button></div></form>`)}
+function savePart(e,id){e.preventDefault();const f=new FormData(e.target);let p=id?part(id):{id:uid('P')};Object.assign(p,{partNo:f.get('partNo'),name:f.get('name'),type:f.get('type'),unit:f.get('unit'),cost:num(f.get('cost')),sell:num(f.get('sell')),stock:num(f.get('stock')),supplier:f.get('supplier')});if(!id)state.parts.push(p);log((id?'แก้ไข':'เพิ่ม')+'อะไหล่ '+p.name);save();closeModal();render();toast('บันทึกอะไหล่แล้ว')}
+function adjustStock(id){const p=part(id), val=prompt('ใส่จำนวนสต๊อกใหม่ของ '+p.name,p.stock); if(val===null)return;p.stock=num(val);log('ปรับสต๊อก '+p.name+' เป็น '+p.stock);save();render();}
+function renderCustomerList(){const q=(document.getElementById('custQ')?.value||'').toLowerCase();const list=state.customers.filter(c=>{const vs=state.vehicles.filter(v=>v.customerId===c.id);return !q||[c.name,c.phone,c.line,c.type,...vs.map(v=>v.plate+' '+v.model)].join(' ').toLowerCase().includes(q)});document.getElementById('customerList').innerHTML=list.map(c=>{const vs=state.vehicles.filter(v=>v.customerId===c.id);return `<div class="card"><div class="card-head"><div><div class="card-title">${c.name} <span class="badge b-purple">${c.type}</span></div><div class="page-sub">${c.phone} · ${c.line||'-'}</div></div><button class="btn out sm" onclick="openEditCustomer('${c.id}')">แก้ไข</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>ทะเบียน</th><th>รุ่นรถ</th><th>ปี</th><th class="right">ไมล์</th><th class="right">จำนวนงาน</th><th class="right">ยอดซ่อม</th></tr></thead><tbody>${vs.map(v=>{const js=state.jobs.filter(j=>j.vehicleId===v.id);return `<tr><td><span class="plate">${v.plate}</span></td><td>${v.model}</td><td>${v.year}</td><td class="right">${Number(v.mileage||0).toLocaleString()}</td><td class="right">${js.length}</td><td class="right">${money(js.reduce((s,j)=>s+jobTotal(j),0))}</td></tr>`}).join('')}</tbody></table></div></div>`}).join('')||'<div class="empty">ไม่พบข้อมูล</div>'}
+function openEditCustomer(id){const c=state.customers.find(x=>x.id===id);if(!c)return;openModal('แก้ไขลูกค้า',`<form onsubmit="saveCustomer(event,'${id}')"><div class="form-grid">${fieldVal('ชื่อ','name',c.name)}${fieldVal('เบอร์โทร','phone',c.phone)}${fieldVal('LINE','line',c.line)}${selectField('ประเภท','type',['ทั่วไป','ลูกค้าประจำ','VIP','Fleet'],c.type)}</div><div class="actions" style="margin-top:14px"><button class="btn primary">บันทึก</button></div></form>`)}
+function saveCustomer(e,id){e.preventDefault();const f=new FormData(e.target),c=state.customers.find(x=>x.id===id);Object.assign(c,{name:f.get('name'),phone:f.get('phone'),line:f.get('line'),type:f.get('type')});log('แก้ไขลูกค้า '+c.name);save();closeModal();render();}
+function accountBal(acc){return state.cashflow.filter(x=>x.account===acc).reduce((s,x)=>s+(x.direction==='IN'?num(x.amount):-num(x.amount)),0)}
+function sumCF(dir){return state.cashflow.filter(x=>x.direction===dir).reduce((s,x)=>s+num(x.amount),0)}
+function openCashflowForm(){openModal('เพิ่มรายรับ-รายจ่าย',`<form onsubmit="saveCF(event)"><div class="form-grid">${fieldVal('วันที่','date',today(),'date')}${selectField('บัญชี','account',[state.settings.account1,state.settings.account2])}${selectField('ประเภท','direction',['IN','OUT'])}${selectField('หมวดหมู่','category',['รายรับ-งานซ่อม','ขายอะไหล่','ทุนเริ่มต้น','ค่าเช่า','เงินเดือน','ค่าน้ำไฟ','ต้นทุน-อะไหล่','ค่าใช้จ่าย-การตลาด','ค่าใช้จ่าย-อื่นๆ','ถอนหุ้นส่วน'])}${fieldVal('จำนวนเงิน','amount',0,'number')}${fieldVal('Ref No','ref','')}${fieldVal('รายละเอียด','desc','')}</div><div class="actions" style="margin-top:14px"><button class="btn primary">บันทึก</button></div></form>`)}
+function saveCF(e){e.preventDefault();const f=new FormData(e.target);addCF({date:f.get('date'),account:f.get('account'),direction:f.get('direction'),category:f.get('category'),desc:f.get('desc'),amount:num(f.get('amount')),ref:f.get('ref')},true);closeModal();render();toast('บันทึกรายการเงินแล้ว')}
+function addCF(x,doSave=true){state.cashflow.push({id:uid('CF'),...x});if(doSave){log('เพิ่ม Cashflow '+x.direction+' '+money(x.amount)+' '+x.category);save();}}
+function renderCashflowTable(){const el=document.getElementById('cfTable');el.innerHTML=state.cashflow.slice().reverse().map(x=>`<tr><td>${thDate(x.date)}</td><td>${x.account}</td><td>${x.direction==='IN'?'<span class="badge b-green">IN</span>':'<span class="badge b-red">OUT</span>'}</td><td>${x.category}</td><td>${x.desc||'-'}</td><td class="mono">${x.ref||'-'}</td><td class="right up">${x.direction==='IN'?money(x.amount):'-'}</td><td class="right down">${x.direction==='OUT'?money(x.amount):'-'}</td><td class="right mono">${money(x.direction==='IN'?x.amount:-x.amount)}</td><td><button class="btn danger sm" onclick="deleteCF('${x.id}')">ลบ</button></td></tr>`).join('')}
+function deleteCF(id){if(!confirm('ลบรายการเงินนี้?'))return;state.cashflow=state.cashflow.filter(x=>x.id!==id);log('ลบรายการ Cashflow '+id);save();render();}
+function modelReportRows(){const map={};state.jobs.forEach(j=>{const v=vehicle(j.vehicleId), k=v.model||'-';map[k]=map[k]||{n:0,sell:0,gp:0};map[k].n++;map[k].sell+=jobTotal(j);map[k].gp+=jobTotal(j)-jobCost(j)});return Object.entries(map).map(([k,v])=>`<tr><td>${k}</td><td class="right">${v.n}</td><td class="right">${money(v.sell)}</td><td class="right">${money(v.gp)}</td></tr>`).join('')}
+function ownerSummary(revenue,cost,cfIn,cfOut,ar){const gross=revenue-cost, reserve=gross*state.settings.reservePct/100;return moneyRows([['ยอดขายงานซ่อม',revenue],['ต้นทุนงาน',cost],['กำไรขั้นต้น',gross],['เงินสำรอง '+state.settings.reservePct+'%',reserve],['ปันผลโดยประมาณ/คน',(gross-reserve)/4],['ลูกหนี้ค้างรับ',ar],['เงินสด/ธนาคาร',cfIn-cfOut]])}
+function moneyRows(arr){return arr.map(([k,v],i)=>`<div class="rail-row"><span class="rail-key">${k}</span><span class="rail-val ${v<0?'down':''}" style="font-size:${i===arr.length-1?'15px':'12px'}">${money(v)}</span></div>`).join('')}
+function alertsHtml(){const low=state.parts.filter(p=>p.stock<=2&&p.type!=='บริการ'), overdue=state.jobs.filter(j=>j.dueDate&&j.dueDate<today()&&!['ส่งมอบแล้ว','ยกเลิก'].includes(j.status)), ar=state.jobs.filter(j=>jobTotal(j)>num(j.paidAmount));const arr=[];low.forEach(p=>arr.push(['#f59e0b',`อะไหล่ใกล้หมด: ${p.name} เหลือ ${p.stock} ${p.unit}`]));overdue.forEach(j=>arr.push(['#dc2626',`งานเลยกำหนดรับรถ: ${j.id} นัด ${thDate(j.dueDate)}`]));ar.slice(0,3).forEach(j=>arr.push(['#dc2626',`ลูกหนี้ค้างรับ: ${j.id} คงเหลือ ${money(jobTotal(j)-num(j.paidAmount))}`]));return arr.length?arr.slice(0,7).map(a=>`<div class="alert"><div class="alert-dot" style="background:${a[0]}"></div><div class="alert-text">${a[1]}</div></div>`).join(''):'<div class="empty">ยังไม่มีแจ้งเตือนสำคัญ</div>'}
+function saveSettings(e){e.preventDefault();const f=new FormData(e.target);Object.assign(state.settings,{company:f.get('company'),jobPrefix:f.get('jobPrefix'),account1:f.get('account1'),account2:f.get('account2'),taxRate:num(f.get('taxRate')),reservePct:num(f.get('reservePct'))});log('บันทึกตั้งค่าระบบ');save();render();toast('บันทึกตั้งค่าแล้ว')}
+function globalFind(){const q=document.getElementById('globalSearch').value.toLowerCase().trim();if(!q)return;const j=state.jobs.find(j=>{const c=customer(j.customerId),v=vehicle(j.vehicleId);return [j.id,c.name,c.phone,v.plate,v.model].join(' ').toLowerCase().includes(q)});if(j){selectJob(j.id);return}toast('ไม่พบข้อมูลที่ค้นหา')}
+function clearLogs(){state.logs=[];save();render()}
+function resetDemo(){if(!confirm('รีเซ็ตกลับข้อมูลตัวอย่างทั้งหมด?'))return;state=structuredClone(defaultState);save();render();toast('รีเซ็ตแล้ว')}
+function exportJSON(){download('maztech-backup.json',JSON.stringify(state,null,2),'application/json')}
+function importJSONPrompt(){const raw=prompt('วาง JSON backup ที่เคย Export ไว้'); if(!raw)return;try{state=JSON.parse(raw);save();render();toast('นำเข้าข้อมูลแล้ว')}catch(e){toast('JSON ไม่ถูกต้อง')}}
+function exportCSV(type){let rows=[],name=type+'.csv'; if(type==='jobs'){rows=[['Job No','Date','Plate','Customer','Phone','Model','Status','Payment','Total','Paid','Mechanic']].concat(state.jobs.map(j=>{const c=customer(j.customerId),v=vehicle(j.vehicleId);return [j.id,j.dateIn,v.plate,c.name,c.phone,v.model,j.status,j.payment,jobTotal(j),j.paidAmount,j.mechanic]}));} if(type==='parts'){rows=[['Part No','Name','Type','Unit','Cost','Sell','Stock','Supplier']].concat(state.parts.map(p=>[p.partNo,p.name,p.type,p.unit,p.cost,p.sell,p.stock,p.supplier]));} if(type==='customers'){rows=[['Name','Phone','Line','Type']].concat(state.customers.map(c=>[c.name,c.phone,c.line,c.type]));} if(type==='cashflow'){rows=[['Date','Account','Direction','Category','Desc','Amount','Ref']].concat(state.cashflow.map(x=>[x.date,x.account,x.direction,x.category,x.desc,x.amount,x.ref]));} download(name,rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n'),'text/csv;charset=utf-8')}
+function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function openModal(t,b){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=b;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function field(label,name,type='text',ph=''){return `<div class="field"><label>${label}</label><input name="${name}" type="${type}" placeholder="${ph}" ${type==='date'&&ph?'value="'+ph+'"':''}></div>`}
+function fieldVal(label,name,val,type='text'){return `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${String(val??'').replaceAll('"','&quot;')}"></div>`}
+function selectField(label,name,arr,val=''){return `<div class="field"><label>${label}</label><select name="${name}">${arr.map(x=>`<option ${String(x)===String(val)?'selected':''}>${x}</option>`).join('')}</select></div>`}
+function info(k,v){return `<div><div class="info-label">${k}</div><div class="info-val">${v}</div></div>`}
+function jobStatuses(){return ['รับรถเข้า','ตรวจเช็ก','รออะไหล่','กำลังซ่อม','พร้อมส่งมอบ','ส่งมอบแล้ว','ยกเลิก']}
+function payStatuses(){return ['ยังไม่ชำระ','มัดจำแล้ว','ชำระบางส่วน','ชำระครบ','ค้างชำระ']}
+function statusColor(s){return {'รับรถเข้า':'#1e6fc4','ตรวจเช็ก':'#0f766e','รออะไหล่':'#f59e0b','กำลังซ่อม':'#c2410c','พร้อมส่งมอบ':'#7c3aed','ส่งมอบแล้ว':'#059669','ยกเลิก':'#64748b'}[s]||'#64748b'}
+function timelineClass(cur,s){const a=jobStatuses(),ci=a.indexOf(cur),si=a.indexOf(s);return si<ci?'done':si===ci?'active':''}
+function toggleTheme(){document.body.classList.toggle('x')}
+render(); if(document.getElementById('customerList')) renderCustomerList(); autoSyncFromApi();
+const oldRender=render; render=function(){oldRender(); if(state.page==='customers') setTimeout(renderCustomerList,0)};
+</script>
 </body>
 </html>
