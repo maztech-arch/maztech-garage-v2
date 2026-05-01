@@ -125,14 +125,39 @@ function apiUrl(action,params={}){
   Object.keys(params||{}).forEach(k=>u.searchParams.set(k,params[k]));
   return u.toString();
 }
-async function apiGet(action,params={}){
-  const url=apiUrl(action,params);
-  if(!url)throw new Error('ยังไม่ได้ใส่ CONFIG.API_URL');
-  const res=await fetch(url,{method:'GET',cache:'no-store'});
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const json=await res.json();
-  if(json&&json.ok===false)throw new Error(json.error||'API error');
-  return json.data||json;
+function apiGet(action, params = {}) {
+  return new Promise((resolve, reject) => {
+    const url = apiUrl(action, params);
+    if (!url) {
+      reject(new Error('ยังไม่ได้ใส่ CONFIG.API_URL'));
+      return;
+    }
+
+    const callbackName = 'maztechCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    const script = document.createElement('script');
+
+    window[callbackName] = function(json) {
+      try {
+        if (json && json.ok === false) {
+          reject(new Error(json.error || 'API error'));
+        } else {
+          resolve(json.data || json);
+        }
+      } finally {
+        delete window[callbackName];
+        script.remove();
+      }
+    };
+
+    script.onerror = function() {
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('โหลดข้อมูลจาก Apps Script ไม่สำเร็จ'));
+    };
+
+    script.src = url + '&callback=' + callbackName;
+    document.body.appendChild(script);
+  });
 }
 function applyApiState(payload){
   if(!payload)return;
