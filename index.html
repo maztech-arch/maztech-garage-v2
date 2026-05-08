@@ -1,4 +1,361 @@
-<!DOCTYPE html>
+/* =========================================================
+   MAZTECH GARAGE - MAZDA CORPORATE NAVY RED THEME
+   ปรับโทนสี Dashboard เป็น น้ำเงินกรม + แดง Mazda + การ์ดสีองค์กร
+   ========================================================= */
+
+:root {
+  --navy: #10213f;
+  --navy-2: #182b50;
+  --navy-3: #213b68;
+
+  --mazda-red: #b40012;
+  --mazda-red-2: #d0001b;
+  --mazda-red-soft: #fde8ea;
+
+  --blue: #1e5fae;
+  --blue-2: #234a7c;
+  --teal: #147f84;
+  --green: #1f8f4d;
+  --orange: #e7821b;
+  --yellow: #f5b400;
+  --red: #d0001b;
+
+  --bg: #edf2f7;
+  --card: #ffffff;
+  --soft: #f6f8fb;
+  --line: #dfe7f0;
+  --text: #16233a;
+  --muted: #66758c;
+
+  --shadow: 0 10px 28px rgba(16, 33, 63, 0.10);
+}
+
+/* พื้นหลังหลัก */
+body {
+  background: #edf2f7;
+  color: var(--text);
+}
+
+.app {
+  background: linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%);
+}
+
+/* Sidebar น้ำเงินกรมเข้ม */
+.sidebar {
+  background: linear-gradient(180deg, #0f213f 0%, #111b32 100%) !important;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo {
+  background: linear-gradient(180deg, #b40012 0%, #8f0010 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.logo-icon {
+  background: #ffffff !important;
+  color: #b40012 !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+}
+
+.logo-title,
+#brandName {
+  color: #ffffff !important;
+}
+
+.logo-sub {
+  color: rgba(255,255,255,0.78) !important;
+}
+
+/* เมนู */
+.nav-item {
+  color: rgba(255,255,255,0.72) !important;
+  border-left-color: transparent !important;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #ffffff !important;
+}
+
+.nav-item.active {
+  background: rgba(180,0,18,0.22) !important;
+  color: #ffffff !important;
+  border-left-color: #d0001b !important;
+}
+
+.nav-section {
+  color: rgba(255,255,255,0.42) !important;
+}
+
+.nav-badge {
+  background: #d0001b !important;
+  color: #ffffff !important;
+}
+
+/* Topbar */
+.topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #dbe4ee !important;
+  box-shadow: 0 3px 12px rgba(16,33,63,0.04);
+}
+
+.crumb b,
+#crumbTitle {
+  color: var(--navy) !important;
+}
+
+.date-badge {
+  background: #eef4ff !important;
+  color: #1e5fae !important;
+  border: 1px solid #d8e5f6;
+}
+
+/* ปุ่มหลัก = แดง + น้ำเงิน */
+.btn.primary,
+.primary-btn {
+  background: linear-gradient(135deg, #b40012 0%, #d0001b 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 22px rgba(180,0,18,0.22);
+}
+
+.btn.primary:hover,
+.primary-btn:hover {
+  filter: brightness(1.05);
+}
+
+.btn.out {
+  background: #ffffff !important;
+  color: #1e2f4f !important;
+  border: 1px solid #ccd7e5 !important;
+}
+
+.btn.warn {
+  background: #fff4e6 !important;
+  color: #b85f00 !important;
+  border-color: #ffc778 !important;
+}
+
+.btn.green {
+  background: #e8f8ee !important;
+  color: #146c39 !important;
+  border-color: #bde8cd !important;
+}
+
+.btn.danger {
+  background: #fde8ea !important;
+  color: #b40012 !important;
+  border-color: #f5b8bf !important;
+}
+
+/* หัวข้อหน้า */
+.page-title {
+  color: var(--navy) !important;
+  font-weight: 800 !important;
+}
+
+.page-head .page-title {
+  letter-spacing: -0.2px;
+}
+
+.page-head::before {
+  color: #1e5fae;
+}
+
+/* การ์ด KPI */
+.kpi {
+  background: #ffffff !important;
+  border: 1px solid #dfe7f0 !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: 14px !important;
+}
+
+.kpi::before {
+  height: 4px !important;
+  background: var(--c, #1e5fae) !important;
+}
+
+.kpi-icon {
+  border-radius: 10px !important;
+}
+
+.kpi-label {
+  color: #697992 !important;
+  font-weight: 500;
+}
+
+.kpi-value {
+  color: #10213f !important;
+  font-weight: 800 !important;
+}
+
+/* บังคับสี KPI ตามลำดับให้ใกล้รูปตัวอย่าง */
+.kpi-grid .kpi:nth-child(1) {
+  --c: #1e5fae !important;
+  --ib: #e6f0ff !important;
+}
+
+.kpi-grid .kpi:nth-child(2) {
+  --c: #147f84 !important;
+  --ib: #e1f6f6 !important;
+}
+
+.kpi-grid .kpi:nth-child(3) {
+  --c: #e7821b !important;
+  --ib: #fff0dc !important;
+}
+
+.kpi-grid .kpi:nth-child(4) {
+  --c: #1f8f4d !important;
+  --ib: #e4f8ed !important;
+}
+
+.kpi-grid .kpi:nth-child(5) {
+  --c: #1e5fae !important;
+  --ib: #e6f0ff !important;
+}
+
+.kpi-grid .kpi:nth-child(6) {
+  --c: #e7821b !important;
+  --ib: #fff0dc !important;
+}
+
+.kpi-grid .kpi:nth-child(7) {
+  --c: #147f84 !important;
+  --ib: #e1f6f6 !important;
+}
+
+.kpi-grid .kpi:nth-child(8) {
+  --c: #d0001b !important;
+  --ib: #fde8ea !important;
+}
+
+/* การ์ด / ตาราง / Section */
+.card,
+.filter-panel {
+  background: #ffffff !important;
+  border: 1px solid #dfe7f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(16,33,63,0.07);
+}
+
+.card-head {
+  background: #ffffff;
+  border-bottom: 1px solid #edf1f6 !important;
+}
+
+.card-title {
+  color: #10213f !important;
+  font-weight: 800 !important;
+}
+
+/* หัวตารางน้ำเงินกรม */
+.data-table thead th {
+  background: #1b3157 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #1b3157 !important;
+}
+
+.data-table tbody td {
+  border-bottom: 1px solid #eef2f7 !important;
+}
+
+.data-table tbody tr:hover {
+  background: #f7f9fc !important;
+}
+
+/* Badge สีองค์กร */
+.badge.b-blue {
+  background: #e6f0ff !important;
+  color: #1e5fae !important;
+}
+
+.badge.b-green {
+  background: #e5f8ed !important;
+  color: #1f8f4d !important;
+}
+
+.badge.b-orange,
+.badge.b-yellow {
+  background: #fff0dc !important;
+  color: #b85f00 !important;
+}
+
+.badge.b-red {
+  background: #fde8ea !important;
+  color: #b40012 !important;
+}
+
+.badge.b-purple {
+  background: #eee9ff !important;
+  color: #5b3fc4 !important;
+}
+
+/* Progress bar */
+.track {
+  background: #edf2f7 !important;
+}
+
+.fill {
+  background: linear-gradient(90deg, #1e5fae 0%, #147f84 100%) !important;
+}
+
+/* Alert / แจ้งเตือน */
+.alert-dot {
+  box-shadow: 0 0 0 3px rgba(180,0,18,0.08);
+}
+
+.alert-text {
+  color: #263852 !important;
+}
+
+/* ฟอร์ม */
+.field input,
+.field select,
+.field textarea,
+.top-search input {
+  background: #f8fafc !important;
+  border: 1px solid #d9e3ee !important;
+  color: #17233a !important;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.top-search input:focus {
+  background: #ffffff !important;
+  border-color: #1e5fae !important;
+  box-shadow: 0 0 0 3px rgba(30,95,174,0.10);
+}
+
+/* User box */
+.user {
+  background: rgba(0,0,0,0.12);
+  border-top: 1px solid rgba(255,255,255,0.10);
+}
+
+.av {
+  background: #b40012 !important;
+  color: #ffffff !important;
+}
+
+/* Modal */
+.modal-box {
+  border-radius: 16px !important;
+  border: 1px solid #dfe7f0 !important;
+}
+
+.modal-head {
+  background: #10213f !important;
+  color: #ffffff !important;
+}
+
+/* Toast */
+.toast {
+  background: #10213f !important;
+  color: #ffffff !important;
+  border-left: 5px solid #d0001b;
+}<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
