@@ -765,7 +765,58 @@ function accountBal(acc){
       return s + (cashflowDirection(x) === 'IN' ? cashflowAmount(x) : -cashflowAmount(x));
     }, 0);
 }
+function dashboardMetric(key){
+  const sources = [
+    state.dashboardData,
+    state.dashboard,
+    state.metrics,
+    state.data && state.data.dashboardData,
+    state.data && state.data.dashboard
+  ];
 
+  for(const d of sources){
+    if(!d) continue;
+
+    if(Array.isArray(d)){
+      const row = d.find(r =>
+        r.metric_key === key ||
+        r.key === key ||
+        r.metric === key ||
+        r.name === key
+      );
+
+      if(row){
+        const v = row.value ?? row.amount ?? row.formula ?? row.val;
+        if(v !== undefined && v !== null && v !== '') return num(v);
+      }
+    }
+
+    if(typeof d === 'object' && !Array.isArray(d)){
+      const v = d[key];
+
+      if(v !== undefined && v !== null && v !== ''){
+        if(typeof v === 'object'){
+          return num(v.value ?? v.amount ?? v.formula ?? v.val);
+        }
+        return num(v);
+      }
+    }
+  }
+
+  return null;
+}
+
+function cashflowCardIn(){
+  const v = dashboardMetric('revenue_this_month');
+  return v !== null ? v : sumCF('IN');
+}
+
+function cashflowCardOut(){
+  const v = dashboardMetric('expense_this_month');
+  return v !== null ? v : sumCF('OUT');
+}
+
+  
 function sumCF(dir){
   const target = String(dir || '').toUpperCase();
 
