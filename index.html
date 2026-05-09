@@ -547,29 +547,109 @@ function hydrateRelations(){
     }
   });
 }
+function normalizeDashboardPayload(data){
+  if(Array.isArray(data)){
+    const out = {};
+    data.forEach(r => {
+      const key = r.metric_key ?? r.key ?? r.metric ?? r.name;
+      const val = r.value ?? r.amount ?? r.formula ?? r.val;
+      if(key) out[key] = val;
+    });
+    return out;
+  }
+
+  return data || {};
+}
+
+async function collectApiState(){
+  try{
+    const full = await apiGet(CONFIG.ACTIONS.appState || 'getAppState');
+
+    if(full && (full.dashboard || full.jobs || full.parts || full.customers || full.vehicles || full.cashflow)){
+      if(full.dashboard) full.dashboard = normalizeDashboardPayload(full.dashboard);
+      return full;
+    }
+
+    if(full && typeof full === 'object' && !Array.isArray(full)){
+      return { dashboard: normalizeDashboardPayload(full) };
+    }
+  }catch(err){
+    console.warn('getAppState failed, fallback to separate actions:', err);
+  }
+
+  const payload = {};
+  const errors = [];
+
+  const actions = [
+    ['dashboard', CONFIG.ACTIONS.dashboard || 'getDashboardData'],
+    ['jobs', CONFIG.ACTIONS.jobs || 'getJobs'],
+    ['parts', CONFIG.ACTIONS.parts || 'getParts'],
+    ['customers', CONFIG.ACTIONS.customers || 'getCustomers'],
+    ['vehicles', CONFIG.ACTIONS.vehicles || 'getVehicles'],
+    ['cashflow', CONFIG.ACTIONS.cashflow || 'getCashflow'],
+    ['logs', CONFIG.ACTIONS.audit || 'getAuditLog'],
+    ['settings', CONFIG.ACTIONS.settings || 'getSettings']
+  ];
+
+  for(const [key, action] of actions){
+    try{
+      const data = await apiGet(action);
+
+      if(key === 'dashboard'){
+        payload.dashboard = normalizeDashboardPayload(data);
+      }else{
+        payload[key] = data;
+      }
+    }catch(err){
+      errors.push(action + ': ' + err.message);
+    }
+  }
+
+  if(!Object.keys(payload).length){
+    throw new Error(errors[0] || 'Apps Script ไม่ตอบกลับ');
+  }
+
+  if(errors.length){
+    console.warn('ดึงข้อมูลได้บางส่วน:', errors);
+  }
+
+  return payload;
+}
+
 async function syncNow(){
-  if(!CONFIG.API_URL){toast('ยังไม่ได้ใส่ Apps Script URL ใน CONFIG.API_URL');return}
-  if(syncBusy)return;
-  syncBusy=true;
+  if(!CONFIG.API_URL){
+    toast('ยังไม่ได้ใส่ Apps Script URL ใน CONFIG.API_URL');
+    return;
+  }
+
+  if(syncBusy) return;
+  syncBusy = true;
+
   try{
     toast('กำลังดึงข้อมูลจาก Google Sheet...');
-    const data=await apiGet(CONFIG.ACTIONS.appState);
+    const data = await collectApiState();
     applyApiState(data);
     log('Sync ข้อมูลจาก Google Sheet สำเร็จ');
     render();
     toast('อัปเดตข้อมูลจาก Google Sheet แล้ว');
   }catch(err){
     console.error(err);
-    toast('ดึงข้อมูลไม่สำเร็จ: '+err.message);
-  }finally{syncBusy=false}
+    toast('ดึงข้อมูลไม่สำเร็จ: ' + err.message);
+  }finally{
+    syncBusy = false;
+  }
 }
+
 async function autoSyncFromApi(){
-  if(!CONFIG.API_URL)return;
+  if(!CONFIG.API_URL) return;
+
   try{
-    const data=await apiGet(CONFIG.ACTIONS.appState);
+    const data = await collectApiState();
     applyApiState(data);
     render();
-  }catch(err){console.warn('Auto sync failed',err)}
+  }catch(err){
+    console.warn('Auto sync failed', err);
+  }
 }
 function dnum(key,fallback=0){const d=state.dashboard||{};return num(d[key]!==undefined?d[key]:fallback)}
 function dval(key,fallback=''){const d=state.dashboard||{};return d[key]!==undefined?d[key]:fallback}
