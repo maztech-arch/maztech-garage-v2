@@ -698,18 +698,80 @@ function normalizeAccountName(v){
   return String(v || '').trim();
 }
 
+function normalizeAccountName(v){
+  return String(v || '').trim();
+}
+
+function dashboardValue(key){
+  const d = state.dashboardData || state.dashboard || state.metrics || {};
+  const raw = d[key];
+
+  if(raw === undefined || raw === null || raw === '') return null;
+
+  if(typeof raw === 'object'){
+    if(raw.value !== undefined) return num(raw.value);
+    if(raw.amount !== undefined) return num(raw.amount);
+  }
+
+  return num(raw);
+}
+
+function dashboardBalanceForAccount(acc){
+  const a = normalizeAccountName(acc)
+    .toLowerCase()
+    .replace(/\s/g,'')
+    .replace(/-/g,'');
+
+  if(a.includes('051')) return dashboardValue('cash_kbank_051');
+  if(a.includes('225')) return dashboardValue('cash_kbank_225');
+  if(a.includes('scb')) return dashboardValue('cash_scb');
+
+  return null;
+}
+
+function cashflowDirection(x){
+  const t = String(x.direction || x.type || '').trim().toLowerCase();
+
+  if(t === 'in' || t === 'income' || t === 'รับ' || t === 'รายรับ') return 'IN';
+  if(t === 'out' || t === 'expense' || t === 'จ่าย' || t === 'รายจ่าย') return 'OUT';
+
+  if(num(x.out) > 0) return 'OUT';
+  if(num(x.in) > 0) return 'IN';
+
+  return num(x.amount) < 0 ? 'OUT' : 'IN';
+}
+
+function cashflowAmount(x){
+  if(num(x.amount) !== 0) return Math.abs(num(x.amount));
+  if(num(x.in) !== 0) return Math.abs(num(x.in));
+  if(num(x.out) !== 0) return Math.abs(num(x.out));
+  if(num(x.signed_amount) !== 0) return Math.abs(num(x.signed_amount));
+  return 0;
+}
+
 function accountBal(acc){
+  const fromDashboard = dashboardBalanceForAccount(acc);
+
+  // ใช้ยอดจาก DASHBOARD_DATA ก่อน เพราะเป็นยอดคงเหลือล่าสุดที่ถูกต้องจากชีท
+  if(fromDashboard !== null){
+    return fromDashboard;
+  }
+
   const target = normalizeAccountName(acc);
 
-  return state.cashflow
+  return (state.cashflow || [])
     .filter(x => normalizeAccountName(x.account) === target)
-    .reduce((s, x) => s + (x.direction === 'IN' ? num(x.amount) : -num(x.amount)), 0);
+    .reduce((s, x) => {
+      return s + (cashflowDirection(x) === 'IN' ? cashflowAmount(x) : -cashflowAmount(x));
+    }, 0);
 }
 
 function sumCF(dir){
-  return state.cashflow
-    .filter(x => x.direction === dir)
-    .reduce((s, x) => s + num(x.amount), 0);
+  const target = String(dir || '').toUpperCase();
+
+  return (state.cashflow || [])
+    .filter(x => cashflowDirection(x) === target)
+    .reduce((s, x) => s + cashflowAmount(x), 0);
 }
 
 function cashflowAccounts(){
@@ -719,20 +781,37 @@ function cashflowAccounts(){
       .filter(Boolean)
   )];
 
-  const fromSettings = [
+  // ถ้ามีบัญชีจริงจากตาราง Cashflow ให้ใช้บัญชีจริงเท่านั้น
+  // ไม่ต้องเอา KBank-รับ / KBank-จ่าย มาแสดงซ้ำ
+  if(fromCashflow.length){
+    return fromCashflow.sort(accountSort);
+  }
+
+  return [
     normalizeAccountName(state.settings.account1),
     normalizeAccountName(state.settings.account2)
   ].filter(Boolean);
+}
 
-  return [...new Set([...fromCashflow, ...fromSettings])];
+function accountSort(a,b){
+  const order = acc => {
+    const x = normalizeAccountName(acc).toLowerCase();
+    if(x.includes('051')) return 1;
+    if(x.includes('225')) return 2;
+    if(x.includes('scb')) return 3;
+    return 99;
+  };
+
+  return order(a) - order(b);
 }
 
 function cashflowAccountCards(){
   const accounts = cashflowAccounts();
+
   const colors = [
     ['#1e6fc4', '#dbeafe'],
-    ['#7c3aed', '#ede9fe'],
     ['#059669', '#d1fae5'],
+    ['#7c3aed', '#ede9fe'],
     ['#f59e0b', '#fef3c7']
   ];
 
