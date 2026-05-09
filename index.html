@@ -930,6 +930,555 @@ function timelineClass(cur,s){const a=jobStatuses(),ci=a.indexOf(cur),si=a.index
 function toggleTheme(){document.body.classList.toggle('x')}
 render(); if(document.getElementById('customerList')) renderCustomerList(); autoSyncFromApi();
 const oldRender=render; render=function(){oldRender(); if(state.page==='customers') setTimeout(renderCustomerList,0)};
+/************************************************************
+ * MAZTECH APPOINTMENTS UI PATCH
+ * เพิ่มเมนู + หน้านัดคิวลูกค้า + บันทึกลง Google Sheets
+ * วางก่อน </script> ท้ายไฟล์ index.html
+ ************************************************************/
+(function(){
+  if (window.__MZ_APPT_UI_PATCH__) return;
+  window.__MZ_APPT_UI_PATCH__ = true;
+
+  if (typeof state === 'undefined' || typeof pages === 'undefined') {
+    console.warn('Appointment patch skipped: ไม่พบ state/pages ของเว็บเวอร์ชัน Google Sheets');
+    return;
+  }
+
+  if (typeof CONFIG !== 'undefined') {
+    CONFIG.ACTIONS = CONFIG.ACTIONS || {};
+    CONFIG.ACTIONS.appointments = 'getAppointments';
+  }
+
+  state.appointments = Array.isArray(state.appointments) ? state.appointments : [];
+
+  if (Array.isArray(menus) && !menus.some(m => m[0] === 'appointments')) {
+    const idx = menus.findIndex(m => m[0] === 'cashflow');
+    menus.splice(idx >= 0 ? idx + 1 : menus.length, 0, ['appointments', '📅 นัดคิวลูกค้า']);
+  }
+
+  if (typeof applyApiState === 'function') {
+    const oldApplyApiState = applyApiState;
+    applyApiState = function(payload) {
+      oldApplyApiState(payload);
+
+      if (payload && Array.isArray(payload.appointments)) {
+        state.appointments = payload.appointments;
+        if (typeof save === 'function') save();
+      }
+    };
+  }
+
+  if (typeof collectApiState === 'function') {
+    const oldCollectApiState = collectApiState;
+    collectApiState = async function() {
+      const payload = await oldCollectApiState();
+
+      try {
+        payload.appointments = await apiGet('getAppointments');
+      } catch (err) {
+        console.warn('โหลดนัดหมายไม่สำเร็จ:', err);
+      }
+
+      return payload;
+    };
+  }
+
+  const APPT_STATUSES = ['นัดแล้ว', 'ยืนยันแล้ว', 'เข้ารับบริการแล้ว', 'เลื่อนนัด', 'ยกเลิก', 'ไม่มาตามนัด'];
+  const APPT_ADVISORS = ['เจ้าหน้าที่ 1', 'เจ้าหน้าที่ 2', 'เอ', 'กาย', 'ออย', 'พงษ์'];
+  const APPT_SERVICE_TYPES = ['เช็กระยะ', 'ซ่อมทั่วไป', 'เปลี่ยนถ่ายน้ำมัน', 'ช่วงล่าง', 'เบรก', 'แอร์', 'ไฟฟ้า', 'DPF / เขม่า', 'ประเมินราคาซ่อม', 'อื่นๆ'];
+
+  function apptToday(){
+    if (typeof today === 'function') return today();
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function apptEsc(s){
+    return String(s ?? '').replace(/[&<>'"]/g, c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      "'":'&#39;',
+      '"':'&quot;'
+    }[c]));
+  }
+
+  function apptTimeToMin(t){
+    const m = String(t || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+
+  function appointmentHasConflict(a, list){
+    if (!a || !a.date || !a.startTime || !a.endTime || !a.advisor) return null;
+    if (String(a.status || '') === 'ยกเลิก') return null;
+
+    const s1 = apptTimeToMin(a.startTime);
+    const e1 = apptTimeToMin(a.endTime);
+
+    if (s1 === null || e1 === null) return null;
+
+    for (const b of list || []) {
+      if (!b) continue;
+      if (String(b.id || '') === String(a.id || '')) continue;
+      if (String(b.status || '') === 'ยกเลิก') continue;
+      if (String(b.date || '') !== String(a.date || '')) continue;
+      if (String(b.advisor || '').trim() !== String(a.advisor || '').trim()) continue;
+
+      const s2 = apptTimeToMin(b.startTime);
+      const e2 = apptTimeToMin(b.endTime);
+
+      if (s2 === null || e2 === null) continue;
+
+      if (s1 < e2 && e1 > s2) return b;
+    }
+
+    return null;
+  }
+
+  function appointmentStatusBadge(s){
+    const status = String(s || 'นัดแล้ว');
+
+    if (status === 'ยกเลิก' || status === 'ไม่มาตามนัด') {
+      return `<span class="badge b-red">${apptEsc(status)}</span>`;
+    }
+
+    if (status === 'เลื่อนนัด') {
+      return `<span class="badge b-yellow">${apptEsc(status)}</span>`;
+    }
+
+    if (status === 'เข้ารับบริการแล้ว') {
+      return `<span class="badge b-green">${apptEsc(status)}</span>`;
+    }
+
+    if (status === 'ยืนยันแล้ว') {
+      return `<span class="badge b-purple">${apptEsc(status)}</span>`;
+    }
+
+    return `<span class="badge b-blue">${apptEsc(status)}</span>`;
+  }
+
+  function advisorList(){
+    const fromData = [...new Set((state.appointments || []).map(a => a.advisor).filter(Boolean))];
+    return [...new Set([...APPT_ADVISORS, ...fromData])];
+  }
+
+  function advisorOptions(selected){
+    return advisorList().map(x => `<option ${String(x) === String(selected || '') ? 'selected' : ''}>${apptEsc(x)}</option>`).join('');
+  }
+
+  function statusOptions(selected){
+    return APPT_STATUSES.map(x => `<option ${String(x) === String(selected || '') ? 'selected' : ''}>${apptEsc(x)}</option>`).join('');
+  }
+
+  function serviceTypeOptions(selected){
+    return APPT_SERVICE_TYPES.map(x => `<option ${String(x) === String(selected || '') ? 'selected' : ''}>${apptEsc(x)}</option>`).join('');
+  }
+
+  function jobOptions(selected){
+    const rows = [`<option value="">ไม่ผูก Job</option>`];
+
+    (state.jobs || []).forEach(j => {
+      let c = {};
+      let v = {};
+
+      try { c = typeof customer === 'function' ? customer(j.customerId) : {}; } catch(e) {}
+      try { v = typeof vehicle === 'function' ? vehicle(j.vehicleId) : {}; } catch(e) {}
+
+      const label = [
+        j.id || '',
+        v.plate || j.plate || '',
+        c.name || j.customerName || ''
+      ].filter(Boolean).join(' | ');
+
+      rows.push(`<option value="${apptEsc(j.id)}" ${String(j.id) === String(selected || '') ? 'selected' : ''}>${apptEsc(label)}</option>`);
+    });
+
+    return rows.join('');
+  }
+
+  pages.appointments = function(){
+    return `
+      <div class="page-head">
+        <div>
+          <div class="page-title">นัดคิวลูกค้า</div>
+          <div class="page-sub">จัดคิวลูกค้าเข้าอู่ กันคิวชนระหว่างเจ้าหน้าที่ 2 คน และบันทึกลงชีท APPOINTMENTS</div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" onclick="openAppointmentForm()">+ เพิ่มนัดใหม่</button>
+          <button class="btn out" onclick="syncNow()">🔄 ดึงข้อมูลชีท</button>
+        </div>
+      </div>
+
+      <div class="grid kpi-grid">
+        ${kpi('📅','นัดวันนี้','<span id="apptTodayCount">0</span>','จำนวนคิวนัดวันนี้','#1e6fc4','#dbeafe')}
+        ${kpi('✅','ยืนยันแล้ว','<span id="apptConfirmedCount">0</span>','ลูกค้ายืนยันนัดแล้ว','#059669','#d1fae5')}
+        ${kpi('⚠️','คิวชน','<span id="apptConflictCount">0</span>','ต้องรีบจัดเวลาใหม่','#dc2626','#fee2e2')}
+        ${kpi('➡️','นัดวันพรุ่งนี้','<span id="apptTomorrowCount">0</span>','เตรียมอะไหล่ / ช่างล่วงหน้า','#7c3aed','#ede9fe')}
+      </div>
+
+      <div class="filter-panel">
+        <div class="filter-row">
+          <div class="field">
+            <label>วันที่</label>
+            <input id="apptDateFilter" type="date" onchange="renderAppointmentsTable()">
+          </div>
+          <div class="field">
+            <label>เจ้าหน้าที่</label>
+            <select id="apptAdvisorFilter" onchange="renderAppointmentsTable()">
+              <option value="">ทุกคน</option>
+              ${advisorOptions('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>สถานะ</label>
+            <select id="apptStatusFilter" onchange="renderAppointmentsTable()">
+              <option value="">ทุกสถานะ</option>
+              ${statusOptions('')}
+            </select>
+          </div>
+          <button class="btn soft" onclick="clearAppointmentFilters()">ล้างตัวกรอง</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">ตารางนัดหมาย</div>
+            <div class="page-sub" id="apptCountText">-</div>
+          </div>
+          <button class="btn out sm" onclick="exportAppointmentsCSV()">Export CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>เวลา</th>
+                <th>เจ้าหน้าที่</th>
+                <th>ลูกค้า</th>
+                <th>เบอร์โทร</th>
+                <th>ทะเบียน</th>
+                <th>รุ่นรถ</th>
+                <th>ประเภทงาน</th>
+                <th>Job</th>
+                <th>สถานะ</th>
+                <th>ตรวจคิว</th>
+                <th>หมายเหตุ</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="appointmentsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  };
+
+  window.openAppointmentForm = function(id){
+    const a = (state.appointments || []).find(x => String(x.id) === String(id)) || {
+      id: '',
+      date: apptToday(),
+      startTime: '09:00',
+      endTime: '10:00',
+      advisor: 'เจ้าหน้าที่ 1',
+      customerName: '',
+      phone: '',
+      plate: '',
+      model: '',
+      jobId: '',
+      serviceType: 'ประเมินราคาซ่อม',
+      status: 'นัดแล้ว',
+      note: ''
+    };
+
+    openModal(id ? 'แก้ไขนัดหมาย' : 'เพิ่มนัดคิวลูกค้า', `
+      <form onsubmit="saveAppointmentForm(event)">
+        <input type="hidden" name="id" value="${apptEsc(a.id)}">
+        <div class="form-grid">
+          <div class="field">
+            <label>วันที่นัด</label>
+            <input name="date" type="date" value="${apptEsc(a.date)}" required>
+          </div>
+
+          <div class="field">
+            <label>เวลาเริ่ม</label>
+            <input name="startTime" type="time" value="${apptEsc(a.startTime)}" required>
+          </div>
+
+          <div class="field">
+            <label>เวลาจบ</label>
+            <input name="endTime" type="time" value="${apptEsc(a.endTime)}" required>
+          </div>
+
+          <div class="field">
+            <label>เจ้าหน้าที่รับนัด</label>
+            <select name="advisor" required>${advisorOptions(a.advisor)}</select>
+          </div>
+
+          <div class="field">
+            <label>ชื่อลูกค้า</label>
+            <input name="customerName" value="${apptEsc(a.customerName)}" placeholder="ชื่อลูกค้า">
+          </div>
+
+          <div class="field">
+            <label>เบอร์โทร</label>
+            <input name="phone" value="${apptEsc(a.phone)}" placeholder="08x-xxx-xxxx">
+          </div>
+
+          <div class="field">
+            <label>ทะเบียนรถ</label>
+            <input name="plate" value="${apptEsc(a.plate)}" placeholder="เช่น 2กก 1234">
+          </div>
+
+          <div class="field">
+            <label>รุ่นรถ</label>
+            <input name="model" value="${apptEsc(a.model)}" placeholder="Mazda2 / CX-5 / CX-30">
+          </div>
+
+          <div class="field">
+            <label>ประเภทงาน</label>
+            <select name="serviceType">${serviceTypeOptions(a.serviceType)}</select>
+          </div>
+
+          <div class="field">
+            <label>ผูกกับ Job</label>
+            <select name="jobId">${jobOptions(a.jobId)}</select>
+          </div>
+
+          <div class="field">
+            <label>สถานะนัด</label>
+            <select name="status">${statusOptions(a.status)}</select>
+          </div>
+
+          <div class="field span-4">
+            <label>หมายเหตุ</label>
+            <textarea name="note" placeholder="เช่น ลูกค้าขอรอรับรถ / ต้องเตรียมอะไหล่ / โทรยืนยันก่อนเข้า">${apptEsc(a.note)}</textarea>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:14px">
+          <button class="btn primary" type="submit">บันทึกนัดหมาย</button>
+          <button class="btn out" type="button" onclick="closeModal()">ยกเลิก</button>
+        </div>
+      </form>
+    `);
+  };
+
+  window.saveAppointmentForm = async function(e){
+    e.preventDefault();
+
+    if (!CONFIG.API_URL) {
+      toast('ยังไม่ได้ใส่ CONFIG.API_URL');
+      return;
+    }
+
+    const f = new FormData(e.target);
+
+    const payload = {
+      id: f.get('id') || '',
+      date: f.get('date') || '',
+      startTime: f.get('startTime') || '',
+      endTime: f.get('endTime') || '',
+      advisor: f.get('advisor') || '',
+      customerName: f.get('customerName') || '',
+      phone: f.get('phone') || '',
+      plate: f.get('plate') || '',
+      model: f.get('model') || '',
+      jobId: f.get('jobId') || '',
+      serviceType: f.get('serviceType') || '',
+      status: f.get('status') || 'นัดแล้ว',
+      note: f.get('note') || ''
+    };
+
+    try {
+      toast('กำลังบันทึกนัดหมาย...');
+      const result = await apiGet('saveAppointment', payload);
+
+      if (result && Array.isArray(result.appointments)) {
+        state.appointments = result.appointments;
+      }
+
+      if (typeof save === 'function') save();
+
+      closeModal();
+      render();
+      toast('บันทึกนัดหมายแล้ว');
+    } catch (err) {
+      console.error(err);
+      toast('บันทึกนัดไม่สำเร็จ: ' + err.message);
+    }
+  };
+
+  window.cancelAppointment = async function(id){
+    if (!confirm('ยกเลิกนัดหมายนี้?')) return;
+
+    try {
+      const result = await apiGet('cancelAppointment', { id });
+
+      if (result && Array.isArray(result.appointments)) {
+        state.appointments = result.appointments;
+      }
+
+      if (typeof save === 'function') save();
+
+      render();
+      toast('ยกเลิกนัดแล้ว');
+    } catch (err) {
+      console.error(err);
+      toast('ยกเลิกนัดไม่สำเร็จ: ' + err.message);
+    }
+  };
+
+  window.clearAppointmentFilters = function(){
+    const d = document.getElementById('apptDateFilter');
+    const a = document.getElementById('apptAdvisorFilter');
+    const s = document.getElementById('apptStatusFilter');
+
+    if (d) d.value = apptToday();
+    if (a) a.value = '';
+    if (s) s.value = '';
+
+    renderAppointmentsTable();
+  };
+
+  window.renderAppointmentsTable = function(){
+    const tbody = document.getElementById('appointmentsTable');
+    if (!tbody) return;
+
+    const dateFilter = document.getElementById('apptDateFilter');
+    const advisorFilter = document.getElementById('apptAdvisorFilter');
+    const statusFilter = document.getElementById('apptStatusFilter');
+
+    if (dateFilter && !dateFilter.value) {
+      dateFilter.value = apptToday();
+    }
+
+    const df = dateFilter ? dateFilter.value : '';
+    const af = advisorFilter ? advisorFilter.value : '';
+    const sf = statusFilter ? statusFilter.value : '';
+
+    const all = Array.isArray(state.appointments) ? state.appointments : [];
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowText = tomorrow.toISOString().slice(0, 10);
+
+    const todayCount = all.filter(a => a.date === apptToday() && a.status !== 'ยกเลิก').length;
+    const confirmedCount = all.filter(a => a.status === 'ยืนยันแล้ว').length;
+    const conflictCount = all.filter(a => appointmentHasConflict(a, all) || a.conflict === 'ชนคิว').length;
+    const tomorrowCount = all.filter(a => a.date === tomorrowText && a.status !== 'ยกเลิก').length;
+
+    const t1 = document.getElementById('apptTodayCount');
+    const t2 = document.getElementById('apptConfirmedCount');
+    const t3 = document.getElementById('apptConflictCount');
+    const t4 = document.getElementById('apptTomorrowCount');
+
+    if (t1) t1.textContent = todayCount;
+    if (t2) t2.textContent = confirmedCount;
+    if (t3) t3.textContent = conflictCount;
+    if (t4) t4.textContent = tomorrowCount;
+
+    let rows = all.filter(a => {
+      return (!df || a.date === df) &&
+             (!af || a.advisor === af) &&
+             (!sf || a.status === sf);
+    });
+
+    rows.sort((a, b) => String(a.date + ' ' + a.startTime).localeCompare(String(b.date + ' ' + b.startTime)));
+
+    const countText = document.getElementById('apptCountText');
+    if (countText) countText.textContent = `แสดง ${rows.length} จาก ${all.length} นัดหมาย`;
+
+    tbody.innerHTML = rows.map(a => {
+      const hit = appointmentHasConflict(a, all);
+      const conflictBadge = hit || a.conflict === 'ชนคิว'
+        ? `<span class="badge b-red">ชนคิว</span>`
+        : `<span class="badge b-green">ว่าง</span>`;
+
+      const disabledCancel = a.status === 'ยกเลิก';
+
+      return `
+        <tr>
+          <td>${apptEsc(a.date || '-')}</td>
+          <td><b>${apptEsc(a.startTime || '-')} - ${apptEsc(a.endTime || '-')}</b></td>
+          <td>${apptEsc(a.advisor || '-')}</td>
+          <td>${apptEsc(a.customerName || '-')}</td>
+          <td>${apptEsc(a.phone || '-')}</td>
+          <td><span class="plate">${apptEsc(a.plate || '-')}</span></td>
+          <td>${apptEsc(a.model || '-')}</td>
+          <td>${apptEsc(a.serviceType || '-')}</td>
+          <td class="mono">${apptEsc(a.jobId || '-')}</td>
+          <td>${appointmentStatusBadge(a.status)}</td>
+          <td>${conflictBadge}</td>
+          <td style="white-space:normal;min-width:180px">${apptEsc(a.note || '')}</td>
+          <td>
+            <button class="btn out sm" onclick="openAppointmentForm('${apptEsc(a.id)}')">แก้</button>
+            ${disabledCancel ? '' : `<button class="btn danger sm" onclick="cancelAppointment('${apptEsc(a.id)}')">ยกเลิก</button>`}
+          </td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="13" class="empty">ยังไม่มีนัดหมายในวันที่เลือก</td></tr>`;
+  };
+
+  window.exportAppointmentsCSV = function(){
+    const rows = Array.isArray(state.appointments) ? state.appointments : [];
+
+    if (!rows.length) {
+      toast('ยังไม่มีข้อมูลนัดหมาย');
+      return;
+    }
+
+    const headers = [
+      'id',
+      'date',
+      'startTime',
+      'endTime',
+      'advisor',
+      'customerName',
+      'phone',
+      'plate',
+      'model',
+      'jobId',
+      'serviceType',
+      'status',
+      'conflict',
+      'note'
+    ];
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replaceAll('"','""')}"`).join(','))
+    ].join('\n');
+
+    if (typeof download === 'function') {
+      download('appointments.csv', csv, 'text/csv;charset=utf-8');
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = 'appointments.csv';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+  };
+
+  const oldAfterRenderAppointments = afterRender;
+  afterRender = function(){
+    if (typeof oldAfterRenderAppointments === 'function') {
+      oldAfterRenderAppointments();
+    }
+
+    if (state.page === 'appointments') {
+      const crumb = document.getElementById('crumbTitle');
+      if (crumb) crumb.textContent = 'นัดคิวลูกค้า';
+
+      renderAppointmentsTable();
+    }
+  };
+
+  render();
+})();
+
+
 </script>
 </body>
 </html>
