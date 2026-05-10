@@ -434,6 +434,10 @@ const today=()=>new Date().toISOString().slice(0,10);
 const thDate=s=>{ if(!s) return '-'; const d=new Date(s+'T00:00:00'); return d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'}); };
 const ym=s=>(s||today()).slice(0,7);
 const uid=p=>p+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
+const menus=[
+  ['main','หลัก'],['dashboard','📊 Dashboard'],['jobs','📋 งานซ่อมทั้งหมด'],['newjob','➕ รับรถเข้า / เปิดจ๊อบ'],
+  ['ops','คลัง & บัญชี'],['parts','📦 อะไหล่ / คลัง'],['customers','👥 ลูกค้า / รถ'],['cashflow','💳 รายรับ-รายจ่าย'],['reports','📑 รายงาน / Export'],
+  ['system','ระบบ'],['audit','🔍 Audit Log'],['settings','⚙️ ตั้งค่าระบบ']
 ];
 const defaultState={
   page:'dashboard', selectedJobId:'MT-2504-0041', dark:false,
@@ -651,24 +655,8 @@ function dnum(key,fallback=0){const d=state.dashboard||{};return num(d[key]!==un
 function dval(key,fallback=''){const d=state.dashboard||{};return d[key]!==undefined?d[key]:fallback}
 
 function deepMerge(base,extra){if(!extra||typeof extra!=='object')return base;Object.keys(extra).forEach(k=>{if(extra[k]&&typeof extra[k]==='object'&&!Array.isArray(extra[k])&&base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k]))base[k]=deepMerge(base[k],extra[k]);else base[k]=extra[k];});return base}
-function load() {
-  try {
-    // ใช้ JSON.parse(JSON.stringify()) แทน structuredClone เพื่อให้รองรับมือถือทุกรุ่น
-    const baseState = JSON.parse(JSON.stringify(defaultState));
-    return deepMerge(baseState, JSON.parse(localStorage.getItem(KEY)) || {});
-  } catch (e) {
-    return JSON.parse(JSON.stringify(defaultState));
-  }
-}
-
-function save() {
-  try {
-    // ป้องกันแอปพังกรณีเปิดใน Private Mode หรือ In-app Browser ที่บล็อก localStorage
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn("ไม่สามารถบันทึกลง LocalStorage ได้ (อาจอยู่ใน Private Mode)");
-  }
-}
+function load(){try{return deepMerge(structuredClone(defaultState),JSON.parse(localStorage.getItem(KEY))||{})}catch(e){return structuredClone(defaultState)}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
 function log(text){state.logs.unshift({at:new Date().toLocaleString('th-TH'),text});state.logs=state.logs.slice(0,200);save();}
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
 function jobTotal(j){return (j.items||[]).reduce((s,i)=>s+num(i.qty)*num(i.sell),0)}
@@ -684,24 +672,6 @@ function renderNav(){let html='';menus.forEach(m=>{if(m.length===2&&['main','ops
 function render(){renderNav();document.getElementById('brandName').textContent=state.settings.company;document.getElementById('todayText').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});const title={dashboard:'Dashboard',jobs:'งานซ่อมทั้งหมด',newjob:'รับรถเข้า / เปิดจ๊อบ',detail:'รายละเอียดงาน',parts:'อะไหล่ / คลัง',customers:'ลูกค้า / รถ',cashflow:'รายรับ-รายจ่าย',reports:'รายงาน / Export',audit:'Audit Log',settings:'ตั้งค่าระบบ'}[state.page]||'Dashboard';document.getElementById('crumbTitle').textContent=title;document.getElementById('view').innerHTML=pages[state.page]?pages[state.page]():pages.dashboard();setTimeout(afterRender,0)}
 function afterRender(){if(document.getElementById('jobTable')) renderJobTable(); if(document.getElementById('cfTable')) renderCashflowTable();}
 const pages={
-  appointments(){
-    const list = state.appointments || [];
-    return `<div class="page-head"><div><div class="page-title">ตารางนัดหมาย</div><div class="page-sub">เช็คคิวลูกค้าและจัดการตารางงานช่าง</div></div><div class="actions"><button class="btn out" onclick="syncNow()">🔄 อัปเดตคิว</button></div></div>
-    <div class="card"><div class="table-wrap"><table class="data-table">
-      <thead><tr><th>วันที่นัด</th><th>เวลา</th><th>ลูกค้า</th><th>ทะเบียนรถ</th><th>บริการ</th><th>ผู้รับนัด</th><th>สถานะ</th></tr></thead>
-      <tbody>
-        ${list.map(a => `<tr>
-          <td>${thDate(a.date)}</td>
-          <td><span class="badge b-blue">${a.startTime} - ${a.endTime}</span></td>
-          <td>${a.customerName}</td>
-          <td><span class="plate">${a.plate}</span></td>
-          <td>${a.serviceType||'-'}</td>
-          <td>${a.advisor||'-'}</td>
-          <td><span class="badge ${a.conflict==='ชนคิว'?'b-red':'b-green'}">${a.conflict}</span></td>
-        </tr>`).join('') || '<tr><td colspan="7" class="empty">ไม่มีนัดหมาย</td></tr>'}
-      </tbody>
-    </table></div></div>`
-  },
   dashboard(){
     const jobs=state.jobs||[], cfIn=sumCF('IN'), cfOut=sumCF('OUT');
     const fallbackRevenue=jobs.reduce((s,j)=>s+jobTotal(j),0), fallbackCost=jobs.reduce((s,j)=>s+jobCost(j),0);
@@ -963,4 +933,3 @@ const oldRender=render; render=function(){oldRender(); if(state.page==='customer
 
 </script>
 </body>
-</html>
