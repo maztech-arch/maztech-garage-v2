@@ -655,8 +655,24 @@ function dnum(key,fallback=0){const d=state.dashboard||{};return num(d[key]!==un
 function dval(key,fallback=''){const d=state.dashboard||{};return d[key]!==undefined?d[key]:fallback}
 
 function deepMerge(base,extra){if(!extra||typeof extra!=='object')return base;Object.keys(extra).forEach(k=>{if(extra[k]&&typeof extra[k]==='object'&&!Array.isArray(extra[k])&&base[k]&&typeof base[k]==='object'&&!Array.isArray(base[k]))base[k]=deepMerge(base[k],extra[k]);else base[k]=extra[k];});return base}
-function load(){try{return deepMerge(structuredClone(defaultState),JSON.parse(localStorage.getItem(KEY))||{})}catch(e){return structuredClone(defaultState)}}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function load() {
+  try {
+    // ใช้ JSON.parse(JSON.stringify()) แทน structuredClone เพื่อให้รองรับมือถือทุกรุ่น
+    const baseState = JSON.parse(JSON.stringify(defaultState));
+    return deepMerge(baseState, JSON.parse(localStorage.getItem(KEY)) || {});
+  } catch (e) {
+    return JSON.parse(JSON.stringify(defaultState));
+  }
+}
+
+function save() {
+  try {
+    // ป้องกันแอปพังกรณีเปิดใน Private Mode หรือ In-app Browser ที่บล็อก localStorage
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn("ไม่สามารถบันทึกลง LocalStorage ได้ (อาจอยู่ใน Private Mode)");
+  }
+}
 function log(text){state.logs.unshift({at:new Date().toLocaleString('th-TH'),text});state.logs=state.logs.slice(0,200);save();}
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
 function jobTotal(j){return (j.items||[]).reduce((s,i)=>s+num(i.qty)*num(i.sell),0)}
